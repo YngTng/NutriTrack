@@ -22,6 +22,7 @@ import androidx.navigation.compose.*
 import android.util.Log
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
+import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -49,7 +50,7 @@ class ActivityPage : ComponentActivity() {
                     bottomBar = { // Defines the bottom navigation bar
                         BottomBar(navController = navController, selectedItemState = selectedItemState)
                     }
-                ) { innerPadding -> // Makes sure the layout isn't hidden under bottom bar
+                ){ innerPadding -> // Makes sure the layout isn't hidden under bottom bar
                     Column(modifier = Modifier.padding(innerPadding)) {
                         MyNavHost(navController, selectedItemState)
                     }
@@ -64,7 +65,7 @@ fun MyNavHost(navController: NavHostController, selectedItemState: MutableState<
     NavHost(
         navController = navController,
         startDestination = "Home"
-    ) {
+    ){
         composable("Home") {
             HomePage()
         }
@@ -134,7 +135,7 @@ fun HomePage() {
             .fillMaxSize()
             .padding(20.dp),
         verticalArrangement = Arrangement.Top
-    ) {
+    ){
 
         Spacer(modifier = Modifier.height(15.dp)) // Add space to the top of the column
 
@@ -156,7 +157,7 @@ fun HomePage() {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
-        ) {
+        ){
             Text(
                 text = "You've already filled in your Food Intake Questionnaire, but you can change details here:",
                 style = androidx.compose.ui.text.TextStyle(fontSize = 15.sp),
@@ -169,7 +170,7 @@ fun HomePage() {
                 modifier = Modifier
                     .padding(horizontal = 30.dp, vertical = 8.dp)
                     .height(40.dp)
-            ) {
+            ){
                 Text(text = "Edit") // Button text
             }
         }
@@ -215,7 +216,7 @@ fun HomePage() {
             Box(
                 modifier = Modifier.fillMaxWidth(),
                 contentAlignment = Alignment.CenterEnd
-            ) {
+            ){
                 Text(
                     text = "$totalScore / 100", // Displays their total score based on their user id and gender out of 100
                     fontSize = 16.sp,
@@ -255,37 +256,167 @@ fun HomePage() {
 @Composable
 fun NutricoachPage() {
     Column(
-        modifier = Modifier
-            .fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ){
         Text(
-            text = "NutriCoach Page",
-            fontSize = 24.sp,
+            text = "NutriCoach",
+            fontSize = 25.sp,
             fontWeight = FontWeight.Bold
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text("To be implemented in the future.")
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+        ){
+            Text( // Providing information about the food quality score
+                text = "Fruit Name",
+                style = androidx.compose.ui.text.TextStyle(fontSize = 15.sp),
+                fontWeight = FontWeight.Bold,
+                color = Color.Gray
+            )
+
+            //#TODO Add NutriCoach page content
+
+            HorizontalDivider(
+                modifier = Modifier
+                    .padding(vertical = 18.dp),
+                thickness = 3.dp,        // Thin colour
+                color = Color.LightGray  // Light colour
+            )
+
+            //#TODO Add NutriCoach page content
+        }
     }
 }
 
 // Function for the Settings Page
 @Composable
 fun SettingsPage() {
+
+    val context = LocalContext.current
+
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = "Settings Page",
-            fontSize = 24.sp,
+    ){
+        Text( // Providing information about the food quality score
+            text = "Settings",
+            style = androidx.compose.ui.text.TextStyle(fontSize = 25.sp),
             fontWeight = FontWeight.Bold
         )
+
         Spacer(modifier = Modifier.height(16.dp))
-        Text("To be implemented in the future.")
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+        ){
+            Text( // Providing information about the food quality score
+                text = "ACCOUNT",
+                style = androidx.compose.ui.text.TextStyle(fontSize = 15.sp),
+                fontWeight = FontWeight.Bold,
+                color = Color.Gray
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ){
+                Icon(Icons.Outlined.Phone, contentDescription = "Phone")
+
+                Spacer(modifier = Modifier.width(15.dp)) // Add space between content
+
+            }
+
+            Spacer(modifier = Modifier.height(15.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ){
+                Image(
+                    painter = painterResource(id = R.drawable.idbadge),
+                    contentDescription = "ID Badge",
+                    modifier = Modifier.size(25.dp)
+                )
+
+                Spacer(modifier = Modifier.width(15.dp)) // Add space between content
+
+            }
+
+            Spacer(modifier = Modifier.height(15.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ){
+                Icon(Icons.Default.Person, contentDescription = "Log In")
+
+                Spacer(modifier = Modifier.width(15.dp)) // Add space between content
+
+            }
+
+
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 18.dp),
+                thickness = 3.dp,        // Divider Thickness
+                color = Color.LightGray  // Grey Colour
+            )
+
+            Text( // Providing information about the food quality score
+                text = "OTHER SETTINGS",
+                style = androidx.compose.ui.text.TextStyle(fontSize = 15.sp),
+                fontWeight = FontWeight.Bold,
+                color = Color.Gray
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            TextButton(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = {
+                    context.startActivity(Intent(context, LoginPage::class.java))
+                }
+            ){
+                Icon(Icons.Default.ExitToApp, contentDescription = "Log Out")
+
+                Spacer(modifier = Modifier.width(15.dp)) // Add space between content
+
+                Text("Logout")
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.CenterEnd
+                ){
+                    Icon(Icons.Default.KeyboardArrowRight, contentDescription = "Arrow Right")
+                }
+            }
+
+            TextButton(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = {
+                    context.startActivity(Intent(context, LoginPage::class.java))
+                }
+            ){
+                Icon(Icons.Default.Person, contentDescription = "Log In")
+
+                Spacer(modifier = Modifier.width(15.dp)) // Add space between content
+
+                Text("Clinician Login")
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.CenterEnd
+                ){
+                    Icon(Icons.Default.KeyboardArrowRight, contentDescription = "Arrow Right")
+                }
+            }
+        }
     }
 }
 
@@ -313,7 +444,7 @@ fun InsightsPage(navController: NavHostController, selectedItemState: MutableSta
             .fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(0.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
+    ){
 
         Spacer(modifier = Modifier.height(50.dp)) // Add space
 
@@ -339,9 +470,9 @@ fun InsightsPage(navController: NavHostController, selectedItemState: MutableSta
                     .fillMaxWidth()
                     .padding(vertical = 6.dp),
                 horizontalArrangement = Arrangement.Center
-            ) {
+            ){
                 Text(
-                    text = columnNames.getOrNull(index) ?: "", // Retrieve the column names and display nothing "" if there's nothing
+                    text = columnNames.getOrNull(index) ?: "", // Retrieve column names then display, "" if there's null
                     style = androidx.compose.ui.text.TextStyle(fontSize = 14.sp),
                     modifier = Modifier.weight(1.5f),
                     fontWeight = FontWeight.Bold
@@ -369,23 +500,22 @@ fun InsightsPage(navController: NavHostController, selectedItemState: MutableSta
                 )
             }
         }
-        TotalValue(context, userId, userGender) // Display total value
+        TotalValues(context, userId, userGender) // Display total values for each stat
 
-        //Somehow move the buttons here for INSIGHTS Page
         Column(
             modifier = Modifier
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally, // Center buttons horizontally
             verticalArrangement = Arrangement.spacedBy(5.dp) // Adds space between buttons
-        ) {
+        ){
             //NutriCoach Page
             Button(
                 modifier = Modifier.sizeIn(minWidth = 120.dp, minHeight = 40.dp),
                 onClick = {
                     selectedItemState.value = 2
-                    navController.navigate("NutriCoach")
+                    navController.navigate("NutriCoach") // Navigate to the NutriCoach page
                 }
-            ) {
+            ){
                 Image( //Icon for nutricoach button
                     painter = painterResource(id = R.drawable.rocket),
                     contentDescription = "Rocket Image",
@@ -436,7 +566,7 @@ fun getColumnsBasedOnGender(context: Context, userId: String, userGender: String
 
             Log.d("CSVProcessor", "User Row: $userRow") // Check if the correct row is being retrieved for the user
 
-            if (userRow.isNotEmpty()) { // Find the relevant values for each column baed on the gender indices
+            if (userRow.isNotEmpty()) { // Find relevant values for each column based on the gender
                 relevantIndices.forEach { index ->
                     if (!(userGender.equals("male", ignoreCase = true) && index == 3) &&
                         !(userGender.equals("female", ignoreCase = true) && index == 4)) {
@@ -462,7 +592,7 @@ fun getColumnsBasedOnGender(context: Context, userId: String, userGender: String
 
 // Function to show HEIFAtotalvaluegender
 @Composable
-fun TotalValue(context: Context, userId: String, userGender: String,) {
+fun TotalValues(context: Context, userId: String, userGender: String) {
     var genderSpecificValue by remember { mutableStateOf(0f) } // Mutable variable for the HEIFAtotalsvaluegender progress bars
 
     try { // Open the CSV file from assets, try block to handle potential errors
@@ -523,7 +653,7 @@ fun TotalValue(context: Context, userId: String, userGender: String,) {
         Row( // Row to hold the HEIFA gender column name, progress bar and value
             modifier = Modifier.padding(1.dp),
             verticalAlignment = Alignment.CenterVertically
-        ) {
+        ){
             var progress by remember { mutableStateOf(genderSpecificValue) } // Mutable variable to hold HEIFA gender value
 
             // My colours for the progress bar
@@ -563,7 +693,7 @@ fun TotalValue(context: Context, userId: String, userGender: String,) {
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally, // Center buttons horizontally
             verticalArrangement = Arrangement.spacedBy(5.dp) // Adds space between buttons
-        ) {
+        ){
             Button( // Share button to send food quality using an intent
                 onClick = {
                     val shareIntent = Intent(Intent.ACTION_SEND).apply {
@@ -574,7 +704,7 @@ fun TotalValue(context: Context, userId: String, userGender: String,) {
                     context.startActivity(Intent.createChooser(shareIntent, "Share with someone"))
                 },
                 modifier = Modifier.sizeIn(minWidth = 120.dp, minHeight = 40.dp) // Makes the button smaller
-            ) {
+            ){
                 Icon( // Icon for the share button
                     Icons.Filled.Share,
                     contentDescription = "Share",
