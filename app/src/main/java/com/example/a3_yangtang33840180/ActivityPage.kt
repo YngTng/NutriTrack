@@ -6,11 +6,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -26,7 +24,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -42,15 +42,16 @@ class ActivityPage : ComponentActivity() {
         setContent {
             A3_YangTang33840180Theme {
                 val navController: NavHostController = rememberNavController() // Keeps track of current screen
+                val selectedItemState = remember { mutableStateOf(0) }
 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     bottomBar = { // Defines the bottom navigation bar
-                        BottomBar(navController)
+                        BottomBar(navController = navController, selectedItemState = selectedItemState)
                     }
                 ) { innerPadding -> // Makes sure the layout isn't hidden under bottom bar
                     Column(modifier = Modifier.padding(innerPadding)) {
-                        MyNavHost(innerPadding, navController)
+                        MyNavHost(navController, selectedItemState)
                     }
                 }
             }
@@ -58,60 +59,56 @@ class ActivityPage : ComponentActivity() {
     }
 }
 
-// Nav Host Defines navigation graph which tells the app what screens I have
 @Composable
-fun MyNavHost(innerPadding: PaddingValues, navController: NavHostController) {
-    // NavHost composable to define the navigation graph
+fun MyNavHost(navController: NavHostController, selectedItemState: MutableState<Int>) {
     NavHost(
         navController = navController,
-        startDestination = "Home" // Set the starting destination to "home"
+        startDestination = "Home"
     ) {
-        // Define the composable for the "home" route
         composable("Home") {
             HomePage()
         }
         // Define the composable for the "insights" route
         composable("Insights") {
-            InsightsPage(modifier = Modifier.fillMaxSize())
+            InsightsPage(navController, selectedItemState)
         }
         // Define the composable for the "insights" route
         composable("NutriCoach") {
-            NutriCoachPage(innerPadding)
+            NutricoachPage()
         }
         // Define the composable for the "settings" route
         composable("Settings") {
-            SettingsPage(innerPadding)
+            SettingsPage()
         }
     }
 }
 
-// Bottom navigation bar to switch between screens
 @Composable
-fun BottomBar(navController: NavHostController) {
-    var selectedItem by remember { mutableStateOf(0) } // Tracks which item is currently selected
-    val items = listOf("Home", "Insights", "NutriCoach", "Settings")
+fun BottomBar(navController: NavHostController, selectedItemState: MutableState<Int>) {
 
-    NavigationBar(
-        modifier = Modifier.height(80.dp)
-    ) {
-        // Iterate through each item
+    val items = listOf(
+        "Home",
+        "Insights",
+        "NutriCoach",
+        "Settings"
+    )
+
+    NavigationBar {
         items.forEachIndexed { index, item ->
             NavigationBarItem(
-                icon = { // Choosing icons for navigation bar pages
-                    when (item) {
+                icon = {
+                    when(item) {
                         "Home" -> Icon(Icons.Filled.Home, contentDescription = "Home")
-                        "Insights" -> Icon(Icons.Filled.AccountBox, contentDescription = "Insights")
+                        "Insights" -> Icon(Icons.Filled.Info, contentDescription = "Insights")
                         "NutriCoach" -> Icon(Icons.Filled.Face, contentDescription = "NutriCoach")
                         "Settings" -> Icon(Icons.Filled.Settings, contentDescription = "Settings")
                     }
                 },
-                label = { Text(item, modifier = Modifier.padding(start = 1.dp)) },   // Using the item's name as the label
-
-                selected = selectedItem == index, // Check if the item is currently selected
-
+                label = { Text(item) },
+                selected = selectedItemState.value == index,
                 onClick = {
-                    selectedItem = index // Update selected item state to the current index
-                    navController.navigate(item) // Navigate to corresponding screen based on item name
+                    selectedItemState.value = index
+                    navController.navigate(item)
                 }
             )
         }
@@ -120,7 +117,7 @@ fun BottomBar(navController: NavHostController) {
 
 // Function for the Home page that displays the user food quality score
 @Composable
-fun HomePage(modifier: Modifier = Modifier) {
+fun HomePage() {
     val context = LocalContext.current
     val sharedPreferences = context.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
 
@@ -133,7 +130,7 @@ fun HomePage(modifier: Modifier = Modifier) {
     Log.d("DEBUG", "User ID: $userId, Gender: $userGender, Total Score: $totalScore")
 
     Column(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxSize()
             .padding(20.dp),
         verticalArrangement = Arrangement.Top
@@ -182,7 +179,7 @@ fun HomePage(modifier: Modifier = Modifier) {
         // Add image
         Image(
             painter = painterResource(id = R.drawable.plate),
-            contentDescription = "Fit Logo",
+            contentDescription = "Plate",
             modifier = Modifier
                 .fillMaxWidth()
                 .height(250.dp)
@@ -256,10 +253,9 @@ fun HomePage(modifier: Modifier = Modifier) {
 
 // Function for the NutriCoach page to be implemented in the future
 @Composable
-fun NutriCoachPage(innerPadding: PaddingValues) {
+fun NutricoachPage() {
     Column(
         modifier = Modifier
-            .padding(innerPadding)
             .fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
@@ -269,21 +265,19 @@ fun NutriCoachPage(innerPadding: PaddingValues) {
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold
         )
+
         Spacer(modifier = Modifier.height(16.dp))
 
         Text("To be implemented in the future.")
     }
 }
 
-// Function for the Settings page to be implemented in the future
+// Function for the Settings Page
 @Composable
-fun SettingsPage(innerPadding: PaddingValues) {
+fun SettingsPage() {
     Column(
-        modifier = Modifier
-            .padding(innerPadding)
-            .fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
             text = "Settings Page",
@@ -297,7 +291,7 @@ fun SettingsPage(innerPadding: PaddingValues) {
 
 // Function for the Insights page to display the progress bars
 @Composable
-fun InsightsPage(modifier: Modifier) {
+fun InsightsPage(navController: NavHostController, selectedItemState: MutableState<Int> = remember { mutableIntStateOf(0) }) {
     // Retrieve the userId and userGender
     val context = LocalContext.current
     val sharedPreferences = context.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
@@ -314,7 +308,7 @@ fun InsightsPage(modifier: Modifier) {
     }
 
     Column( // Having a column to put all the UI elements inside
-        modifier = modifier
+        modifier = Modifier
             .padding(start = 20.dp, end = 20.dp)
             .fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(0.dp),
@@ -376,6 +370,32 @@ fun InsightsPage(modifier: Modifier) {
             }
         }
         TotalValue(context, userId, userGender) // Display total value
+
+        //Somehow move the buttons here for INSIGHTS Page
+        Column(
+            modifier = Modifier
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally, // Center buttons horizontally
+            verticalArrangement = Arrangement.spacedBy(5.dp) // Adds space between buttons
+        ) {
+            //NutriCoach Page
+            Button(
+                modifier = Modifier.sizeIn(minWidth = 120.dp, minHeight = 40.dp),
+                onClick = {
+                    selectedItemState.value = 2
+                    navController.navigate("NutriCoach")
+                }
+            ) {
+                Image( //Icon for nutricoach button
+                    painter = painterResource(id = R.drawable.rocket),
+                    contentDescription = "Rocket Image",
+                    modifier = Modifier
+                        .size(25.dp)
+                        .padding(end = 5.dp)
+                )
+                Text("Improve my diet!")
+            }
+        }
     }
 }
 
@@ -442,7 +462,7 @@ fun getColumnsBasedOnGender(context: Context, userId: String, userGender: String
 
 // Function to show HEIFAtotalvaluegender
 @Composable
-fun TotalValue(context: Context, userId: String, userGender: String) {
+fun TotalValue(context: Context, userId: String, userGender: String,) {
     var genderSpecificValue by remember { mutableStateOf(0f) } // Mutable variable for the HEIFAtotalsvaluegender progress bars
 
     try { // Open the CSV file from assets, try block to handle potential errors
@@ -466,7 +486,7 @@ fun TotalValue(context: Context, userId: String, userGender: String) {
 
             // Find the column index based on gender
             if (userRow.isNotEmpty()) {
-                var genderSpecificValueString: String? = null // Initialise variable to store gender vaue
+                var genderSpecificValueString: String? = null // Initialise variable to store gender value
 
                 if (userGender.equals("Male", ignoreCase = true)) { // Access the 4th column if Male
                     genderSpecificValueString = userRow.getOrNull(3)?.trim()
@@ -534,7 +554,7 @@ fun TotalValue(context: Context, userId: String, userGender: String) {
         }
 
         val context = LocalContext.current
-        val shareText = "Hi friend! My total food quality score is $genderSpecificValue!" // Sharing message for the gender specific value
+        val shareText = "My total food quality score is $genderSpecificValue!" // Sharing message for the gender specific value
 
         Spacer(modifier = Modifier.height(20.dp)) // Adds space
 
@@ -542,7 +562,7 @@ fun TotalValue(context: Context, userId: String, userGender: String) {
             modifier = Modifier
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally, // Center buttons horizontally
-            verticalArrangement = Arrangement.spacedBy(16.dp) // Adds space between buttons
+            verticalArrangement = Arrangement.spacedBy(5.dp) // Adds space between buttons
         ) {
             Button( // Share button to send food quality using an intent
                 onClick = {
@@ -555,17 +575,14 @@ fun TotalValue(context: Context, userId: String, userGender: String) {
                 },
                 modifier = Modifier.sizeIn(minWidth = 120.dp, minHeight = 40.dp) // Makes the button smaller
             ) {
+                Icon( // Icon for the share button
+                    Icons.Filled.Share,
+                    contentDescription = "Share",
+                    modifier = Modifier
+                        .size(25.dp)
+                        .padding(end = 5.dp)
+                )
                 Text("Share with someone") // Button text
-            }
-
-            // Improve diet button (to be implemented in the future)
-            Button(
-                onClick = {
-                    Log.d("ButtonClicked", "Improve my diet")
-                },
-                modifier = Modifier.sizeIn(minWidth = 120.dp, minHeight = 40.dp) // Makes the button smaller
-            ) {
-                Text("Improve my diet") // Button text
             }
         }
     }

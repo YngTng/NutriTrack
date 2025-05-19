@@ -13,6 +13,11 @@
         android:theme="@style/Theme.A3_YangTang33840180"
         tools:targetApi="31">
         <activity
+            android:name=".RegisterationPage"
+            android:exported="false"
+            android:label="@string/title_activity_registeration_page"
+            android:theme="@style/Theme.A3_YangTang33840180" />
+        <activity
             android:name=".ActivityPage"
             android:exported="false"
             android:label="@string/title_activity_page"

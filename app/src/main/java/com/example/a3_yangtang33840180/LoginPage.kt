@@ -176,6 +176,17 @@ fun LoginScreen(context: Context, modifier: Modifier = Modifier) { // Login Scre
         ) {
             Text(text = "Continue")
         }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Button(
+            modifier = Modifier.fillMaxWidth(),
+            onClick = {
+                context.startActivity(Intent(context, RegisterationPage()::class.java))
+            }
+        ) {
+            Text("Register")
+        }
     }
 }
 
