@@ -1,4 +1,6 @@
 <resources>
     <string name="app_name">A3_YangTang33840180</string>
     <string name="title_activity_login_page">LoginPage</string>
+    <string name="title_activity_questionnaire_page">QuestionnairePage</string>
+    <string name="title_activity_page">ActivityPage</string>
 </resources>

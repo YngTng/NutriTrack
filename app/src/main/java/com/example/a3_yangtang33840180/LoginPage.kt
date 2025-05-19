@@ -1,6 +1,7 @@
 package com.example.a3_yangtang33840180
 
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -71,9 +72,9 @@ fun LoginScreen(context: Context, modifier: Modifier = Modifier) { // Login Scre
 
     var expanded by remember { mutableStateOf(false) }  // Dropdown menu is collapsed by default (false)
 
-    // Load UserId from user.csv file when screen displays
+    // Load UserId from data.csv file when screen displays
     LaunchedEffect(context) {
-        val loadedUserIds = loadUserIdsFromCSV(context, "user.csv") // Load UserIds through function from user.csv
+        val loadedUserIds = loadUserIdsFromCSV(context, "data.csv") // Load UserIds through function from data.csv
         Log.d("DEBUG", "User IDs loaded: $loadedUserIds") // Check if UserIds have been displayed
         userIds = loadedUserIds.sortedBy { it.toIntOrNull() ?: Int.MAX_VALUE } // Convey UserId strings to integers then sort in ascending order
     }
@@ -164,9 +165,9 @@ fun LoginScreen(context: Context, modifier: Modifier = Modifier) { // Login Scre
 
         Button( // Continue button to next screen
             onClick = {
-                val isValid = validateUser(context, "user.csv", selectedUserId, phoneNumber) // Validating user credentials
+                val isValid = validateUser(context, "data.csv", selectedUserId, phoneNumber) // Validating user credentials
                 if (isValid) {
-                    //switchContext.startActivity(Intent(switchContext, Screen34::class.java)) // Goes to next screen if valid
+                    switchContext.startActivity(Intent(switchContext, QuestionnairePage::class.java)) // Goes to next screen if valid
                 } else {
                     errorMessage = "Invalid User ID or Phone Number." // Shows error message if invalid
                 }
@@ -178,7 +179,7 @@ fun LoginScreen(context: Context, modifier: Modifier = Modifier) { // Login Scre
     }
 }
 
-// Function to retrieve the UserId values from user.csv file
+// Function to retrieve the UserId values from data.csv file
 fun loadUserIdsFromCSV(context: Context, fileName: String): List<String> {
     val userIds = mutableListOf<String>() // List to hold UserId
     try {
@@ -220,19 +221,19 @@ fun loadUserIdsFromCSV(context: Context, fileName: String): List<String> {
 }
 
 
-// Check user credentials from user.csv
+// Check user credentials from data.csv
 fun validateUser(context: Context, fileName: String, userId: String, phone: String): Boolean { // Boolean checks if true or false
     try {
-        val inputStream = context.assets.open(fileName) // Open user.csv file from assets folder
+        val inputStream = context.assets.open(fileName) // Open data.csv file from assets folder
 
-        // Reads the data from the user.csv file
+        // Reads the data from the data.csv file
         val reader = BufferedReader(InputStreamReader(inputStream))
         reader.useLines { lines ->
             lines.drop(1).forEach { line ->  // Skip first line and loop through the rest
                 val values = line.split(",") // Split the line into columns
                 if (values.size >= 2) { // Check if there are at least two values (for phone number and user id)
-                    val csvUserId = values[1].trim() // Get UserId from user.csv and trim spaces
-                    val csvPhone = values[0].trim() // Get phone number from user.csv and trim spaces
+                    val csvUserId = values[1].trim() // Get UserId from data.csv and trim spaces
+                    val csvPhone = values[0].trim() // Get phone number from data.csv and trim spaces
 
                     // If both UserId and phone match then return true
                     if (csvUserId == userId && csvPhone == phone) {

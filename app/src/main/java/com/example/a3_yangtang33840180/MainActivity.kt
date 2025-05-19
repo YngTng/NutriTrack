@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.*
 import com.example.a3_yangtang33840180.ui.theme.A3_YangTang33840180Theme
 
 // Main activity that starts when app is opened
-class Screen1 : ComponentActivity() {
+class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge() // Makes the app use the whole screen
