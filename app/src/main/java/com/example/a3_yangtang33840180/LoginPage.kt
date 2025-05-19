@@ -88,7 +88,7 @@ fun LoginScreen(context: Context, modifier: Modifier = Modifier) { // Login Scre
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
-    ) {
+    ){
         Text( // Login Text
             text = "Log In",
             style = androidx.compose.ui.text.TextStyle(fontSize = 40.sp),
@@ -118,7 +118,7 @@ fun LoginScreen(context: Context, modifier: Modifier = Modifier) { // Login Scre
             ExposedDropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false } // Close dropdown if clicked outside
-            ) {
+            ){
                 userIds.forEach { id -> // Loop through all UserIds
                     DropdownMenuItem(
                         text = { Text(id) },
@@ -173,7 +173,7 @@ fun LoginScreen(context: Context, modifier: Modifier = Modifier) { // Login Scre
                 }
             },
             modifier = Modifier.fillMaxWidth()
-        ) {
+        ){
             Text(text = "Continue")
         }
 
@@ -184,7 +184,7 @@ fun LoginScreen(context: Context, modifier: Modifier = Modifier) { // Login Scre
             onClick = {
                 context.startActivity(Intent(context, RegisterationPage()::class.java))
             }
-        ) {
+        ){
             Text("Register")
         }
     }

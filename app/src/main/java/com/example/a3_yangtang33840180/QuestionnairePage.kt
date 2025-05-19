@@ -109,12 +109,12 @@ class QuestionnairePage : ComponentActivity() {
 
                 Scaffold(
                     modifier = Modifier.fillMaxSize()
-                ) { innerPadding ->
+                ){ innerPadding ->
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(innerPadding)
-                    ) {
+                    ){
                         TopNavBar()
 
                         Column(
@@ -123,7 +123,7 @@ class QuestionnairePage : ComponentActivity() {
                                 .padding(16.dp)  // Add padding here for content
                                 .verticalScroll(rememberScrollState()), // Make content scrollable
                             horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
+                        ){
                             Spacer(modifier = Modifier.height(15.dp))
 
                             // Food Category Checkboxes
@@ -310,19 +310,19 @@ fun CheckboxFunction() {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(0.dp)
-    ) {
+    ){
         items(foodCategories.chunked(3)) { rowItems ->
 
             Row(
                 modifier = Modifier
                     .fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
+            ){
                 rowItems.forEach { category ->
                     Row(
                         verticalAlignment = Alignment.CenterVertically, // Align checkbox and text
                         modifier = Modifier.weight(1f)
-                    ) {
+                    ){
                         Checkbox( // Checkbox for each category
                             checked = checkBoxStates[category]?.value ?: false,
                             onCheckedChange = { newState ->
@@ -346,7 +346,7 @@ fun CheckboxFunction() {
 fun DropdownMenuExample(
     dropDownValue: String, // The current selected value in the dropdown
     onDropDownValueChange: (String) -> Unit // Function to update the dropdown value
-) {
+){
     var expanded by remember { mutableStateOf(false) } // Check whether dropdown is open or closed
 
     val mContext = LocalContext.current
@@ -365,7 +365,7 @@ fun DropdownMenuExample(
         OutlinedButton(
             onClick = { expanded = true },
             modifier = Modifier.fillMaxWidth()
-        ) {
+        ){
 
             Text(text = dropDownValue, modifier = Modifier.weight(1f)) // Display the selected option
 
@@ -380,7 +380,7 @@ fun DropdownMenuExample(
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false }
-        ) {
+        ){
             val options = listOf("Health Devotee", "Mindful Eater", "Wellness Striver", "Balance Seeker", "Health Procrastinator", "Food Carefree")
 
             options.forEach { option -> // Each item in the dropdown menu
@@ -446,13 +446,13 @@ fun TimeBox(time: MutableState<String>, onClick: () -> Unit) {
             .height(30.dp)
             .width(140.dp),
         contentAlignment = Alignment.CenterStart
-    ) {
+    ){
         Row(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(start = 16.dp),
             verticalAlignment = Alignment.CenterVertically
-        ) {
+        ){
 
             // Clock icon
             Image(
@@ -546,12 +546,12 @@ fun PersonaSelectionButtons() {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(1.dp)
-    ) {
+    ){
 
         // Row 1 for the first three persona buttons
         Row(
             horizontalArrangement = Arrangement.spacedBy(1.dp)
-        ) {
+        ){
             options.take(3).forEach { option ->
                 Button(
                     onClick = {
@@ -560,7 +560,7 @@ fun PersonaSelectionButtons() {
                     },
                     modifier = Modifier.padding(2.dp), // Padding around button
                     contentPadding = PaddingValues(9.dp)
-                ) {
+                ){
                     Text( // Text displayed for each persona
                         option,
                         textAlign = TextAlign.Center,
@@ -573,7 +573,7 @@ fun PersonaSelectionButtons() {
         // Row to display next three persona buttons
         Row(
             horizontalArrangement = Arrangement.spacedBy(1.dp)
-        ) {
+        ){
             options.drop(3).forEach { option ->
                 Button(
                     onClick = {
@@ -582,7 +582,7 @@ fun PersonaSelectionButtons() {
                     },
                     modifier = Modifier.padding(2.dp), // Padding around the button
                     contentPadding = PaddingValues(8.dp)
-                ) {
+                ){
                     Text( // Text displayed for each persona
                         option, textAlign = TextAlign.Center,
                         fontSize = 14.sp

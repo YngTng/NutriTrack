@@ -46,14 +46,14 @@ fun SplashScreen(modifier: Modifier = Modifier) {
     Surface(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background // Set background to app's theme colour
-    ) {
+    ){
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp), // Adds padding around the elements
             horizontalAlignment = Alignment.CenterHorizontally, // Centers horizontally
             verticalArrangement = Arrangement.Center // Centers vertically
-        ) {
+        ){
             Text(
                 text = "NutriTrack", // App title
                 style = androidx.compose.ui.text.TextStyle(fontSize = 45.sp),
@@ -81,7 +81,7 @@ fun SplashScreen(modifier: Modifier = Modifier) {
                 onClick = {
                     context.startActivity(Intent(context, LoginPage()::class.java))
                 }
-            ) {
+            ){
                 Text("Login")
             }
 
