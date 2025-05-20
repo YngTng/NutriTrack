@@ -333,6 +333,8 @@ fun SettingsPage() {
 
                 Spacer(modifier = Modifier.width(15.dp)) // Add space between content
 
+                //#TODO Add Settings page content
+
             }
 
             Spacer(modifier = Modifier.height(15.dp))
@@ -349,6 +351,7 @@ fun SettingsPage() {
 
                 Spacer(modifier = Modifier.width(15.dp)) // Add space between content
 
+                //#TODO Add Settings page content
             }
 
             Spacer(modifier = Modifier.height(15.dp))
@@ -361,6 +364,7 @@ fun SettingsPage() {
 
                 Spacer(modifier = Modifier.width(15.dp)) // Add space between content
 
+                //#TODO Add Settings page content
             }
 
 
