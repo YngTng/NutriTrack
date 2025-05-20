@@ -21,17 +21,19 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.*
 import android.util.Log
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.*
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.outlined.Phone
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.a3_yangtang33840180.data.fruityVice.FruitViewModel
+
 import com.example.a3_yangtang33840180.ui.theme.A3_YangTang33840180Theme
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -79,7 +81,15 @@ fun MyNavHost(navController: NavHostController, selectedItemState: MutableState<
         }
         // Define the composable for the "settings" route
         composable("Settings") {
-            SettingsPage()
+            SettingsPage(navController)
+        }
+        // Define the composable for the "clinician login" route
+        composable("ClinicianLogin") {
+            ClinicianLoginPage(navController)
+        }
+        // Define the composable for the "clinician stats" route
+        composable("ClinicianDashboard") {
+            ClinicianDashboardPage(navController)
         }
     }
 }
@@ -252,6 +262,115 @@ fun HomePage() {
     }
 }
 
+// Function for the Insights page to display the progress bars
+@Composable
+fun InsightsPage(navController: NavHostController, selectedItemState: MutableState<Int> = remember { mutableIntStateOf(0) }) {
+    // Retrieve the userId and userGender
+    val context = LocalContext.current
+    val sharedPreferences = context.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
+    val userId = sharedPreferences.getString("userId", "Unknown") ?: "Unknown"
+    val userGender = sharedPreferences.getString("Sex_$userId", "Unknown") ?: "Unknown"
+
+    Log.d("DEBUG", "Slider User ID: $userId, Gender: $userGender") // Check if the correct values have been retrieved
+
+    val columnNames = listOf("Discretionary", "Vegetables", "Fruit", "Grains/Cereals", "Wholegrains", "Meat", "Dairy", "Sodium", "Alcohol", "Water", "Sugar", "Saturated fat", "Unsaturated fat")
+    val totals = listOf("10.0", "10.0", "10.0", "5.0", "5.0", "10.0", "10.0", "10.0", "5.0", "5.0", "10.0", "5.0", "5.0")
+
+    val (filteredColumns, userValues) = remember {
+        getColumnsBasedOnGender(context, userId, userGender)  // Lists column names based on the user gender
+    }
+
+    Column( // Having a column to put all the UI elements inside
+        modifier = Modifier
+            .padding(start = 20.dp, end = 20.dp)
+            .fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(0.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ){
+
+        Spacer(modifier = Modifier.height(50.dp)) // Add space
+
+        Text( // Displaying the title
+            text = "Insights: Food Score",
+            style = androidx.compose.ui.text.TextStyle(fontSize = 25.sp),
+            fontWeight = FontWeight.Bold
+        )
+
+        Spacer(modifier = Modifier.height(30.dp)) // Add space
+
+        // Show the progress bars for each food category based on user gender
+        filteredColumns.forEachIndexed { index, column ->
+            var progress by remember { mutableStateOf(userValues.getOrNull(index)?.toFloatOrNull() ?: 0f) } // Holds the value of the category
+            val maxProgress = totals.getOrNull(index)?.toFloat() ?: 10f // Call the max values and default to 10 if none
+
+            // Defining my colours for the track
+            val inactiveTrack = colorResource(id = R.color.purple_200)
+            val activeTrack = colorResource(id = R.color.purple_500)
+
+            Row( // Put the column name, progress bar and totals in the same row
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 6.dp),
+                horizontalArrangement = Arrangement.Center
+            ){
+                Text(
+                    text = columnNames.getOrNull(index) ?: "", // Retrieve column names then display, "" if there's null
+                    style = androidx.compose.ui.text.TextStyle(fontSize = 14.sp),
+                    modifier = Modifier.weight(1.5f),
+                    fontWeight = FontWeight.Bold
+                )
+
+                LaunchedEffect(userValues.getOrNull(index)) {// Updates progress variable if something changes
+                    progress = userValues.getOrNull(index)?.toFloatOrNull() ?: 0f
+                }
+
+                LinearProgressIndicator( // Calling the progress bars
+                    progress = { progress / maxProgress },
+                    modifier = Modifier
+                        .weight(3f)
+                        .height(5.dp),
+                    color = activeTrack, // Choosing the color for the filled section
+                    trackColor = inactiveTrack // Choosing the color for the unfilled value
+                )
+
+                Spacer(modifier = Modifier.width(10.dp))
+
+                Text(
+                    text = "${progress}/${totals.getOrNull(index) ?: ""}",
+                    style = androidx.compose.ui.text.TextStyle(fontSize = 15.sp),
+                    modifier = Modifier.weight(0.9f)
+                )
+            }
+        }
+        TotalValues(context, userId, userGender) // Display total values for each stat
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally, // Center buttons horizontally
+            verticalArrangement = Arrangement.spacedBy(5.dp) // Adds space between buttons
+        ){
+            //NutriCoach Page
+            Button(
+                modifier = Modifier.sizeIn(minWidth = 120.dp, minHeight = 40.dp),
+                onClick = {
+                    selectedItemState.value = 2
+                    navController.navigate("NutriCoach") // Navigate to the NutriCoach page
+                }
+            ){
+                Image( //Icon for nutricoach button
+                    painter = painterResource(id = R.drawable.rocket),
+                    contentDescription = "Rocket Image",
+                    modifier = Modifier
+                        .size(25.dp)
+                        .padding(end = 5.dp)
+                )
+                Text("Improve my diet!")
+            }
+        }
+    }
+}
+
 // Function for the NutriCoach page to be implemented in the future
 @Composable
 fun NutricoachPage() {
@@ -272,14 +391,9 @@ fun NutricoachPage() {
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
         ){
-            Text( // Providing information about the food quality score
-                text = "Fruit Name",
-                style = androidx.compose.ui.text.TextStyle(fontSize = 15.sp),
-                fontWeight = FontWeight.Bold,
-                color = Color.Gray
-            )
-
             //#TODO Add NutriCoach page content
+            FruitSearchScreen()
+
 
             HorizontalDivider(
                 modifier = Modifier
@@ -295,7 +409,7 @@ fun NutricoachPage() {
 
 // Function for the Settings Page
 @Composable
-fun SettingsPage() {
+fun SettingsPage(navController: NavHostController) {
 
     val context = LocalContext.current
 
@@ -405,7 +519,7 @@ fun SettingsPage() {
             TextButton(
                 modifier = Modifier.fillMaxWidth(),
                 onClick = {
-                    context.startActivity(Intent(context, LoginPage::class.java))
+                    navController.navigate("ClinicianLogin")
                 }
             ){
                 Icon(Icons.Default.Person, contentDescription = "Log In")
@@ -424,110 +538,94 @@ fun SettingsPage() {
     }
 }
 
-// Function for the Insights page to display the progress bars
 @Composable
-fun InsightsPage(navController: NavHostController, selectedItemState: MutableState<Int> = remember { mutableIntStateOf(0) }) {
-    // Retrieve the userId and userGender
-    val context = LocalContext.current
-    val sharedPreferences = context.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
-    val userId = sharedPreferences.getString("userId", "Unknown") ?: "Unknown"
-    val userGender = sharedPreferences.getString("Sex_$userId", "Unknown") ?: "Unknown"
+fun ClinicianLoginPage(navController: NavHostController) {
+    var clinicianKey by remember { mutableStateOf("") }
+    var showDialog by remember { mutableStateOf(false) }
 
-    Log.d("DEBUG", "Slider User ID: $userId, Gender: $userGender") // Check if the correct values have been retrieved
-
-    val columnNames = listOf("Discretionary", "Vegetables", "Fruit", "Grains/Cereals", "Wholegrains", "Meat", "Dairy", "Sodium", "Alcohol", "Water", "Sugar", "Saturated fat", "Unsaturated fat")
-    val totals = listOf("10.0", "10.0", "10.0", "5.0", "5.0", "10.0", "10.0", "10.0", "5.0", "5.0", "10.0", "5.0", "5.0")
-
-    val (filteredColumns, userValues) = remember {
-        getColumnsBasedOnGender(context, userId, userGender)  // Lists column names based on the user gender
+    if (showDialog) { // Show alert dialog if login failed
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text("Login Failed") },
+            text = { Text("Invalid Key") },
+            confirmButton = {
+                TextButton(onClick = { showDialog = false }) {
+                    Text("OK")
+                }
+            }
+        )
     }
 
-    Column( // Having a column to put all the UI elements inside
+    Column(
         modifier = Modifier
-            .padding(start = 20.dp, end = 20.dp)
-            .fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(0.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+            .fillMaxSize()
+            .padding(20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ){
+        Text("Clinician Login", fontSize = 26.sp, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
 
-        Spacer(modifier = Modifier.height(50.dp)) // Add space
+        Spacer(modifier = Modifier.height(50.dp))
 
-        Text( // Displaying the title
-            text = "Insights: Food Score",
-            style = androidx.compose.ui.text.TextStyle(fontSize = 25.sp),
+        OutlinedTextField(
+            value = clinicianKey,
+            onValueChange = { clinicianKey = it },
+            label = { Text("Enter your clinician key") },
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(45.dp))
+
+        Button( // Login button
+            onClick = {
+                //#TODO Create Credential validation against database
+                if (clinicianKey == "admin123") {
+                    navController.navigate("ClinicianDashboard")
+                } else {
+                    showDialog = true
+                }
+            },
+            modifier = Modifier.fillMaxWidth()
+        ){ // Button Content
+            Icon(Icons.Default.ExitToApp, contentDescription = "Log In") // Icon for login button
+
+            Spacer(modifier = Modifier.width(15.dp)) // Add space between content
+
+            Text("Clinician Login")
+        }
+    }
+}
+
+@Composable
+fun ClinicianDashboardPage(navController: NavHostController) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ){
+        Text(
+            text = "Clinician Dash",
+            fontSize = 25.sp,
             fontWeight = FontWeight.Bold
         )
 
-        Spacer(modifier = Modifier.height(30.dp)) // Add space
-
-        // Show the progress bars for each food category based on user gender
-        filteredColumns.forEachIndexed { index, column ->
-            var progress by remember { mutableStateOf(userValues.getOrNull(index)?.toFloatOrNull() ?: 0f) } // Holds the value of the category
-            val maxProgress = totals.getOrNull(index)?.toFloat() ?: 10f // Call the max values and default to 10 if none
-
-            // Defining my colours for the track
-            val inactiveTrack = colorResource(id = R.color.purple_200)
-            val activeTrack = colorResource(id = R.color.purple_500)
-
-            Row( // Put the column name, progress bar and totals in the same row
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 6.dp),
-                horizontalArrangement = Arrangement.Center
-            ){
-                Text(
-                    text = columnNames.getOrNull(index) ?: "", // Retrieve column names then display, "" if there's null
-                    style = androidx.compose.ui.text.TextStyle(fontSize = 14.sp),
-                    modifier = Modifier.weight(1.5f),
-                    fontWeight = FontWeight.Bold
-                )
-
-                LaunchedEffect(userValues.getOrNull(index)) {// Updates progress variable if something changes
-                    progress = userValues.getOrNull(index)?.toFloatOrNull() ?: 0f
-                }
-
-                LinearProgressIndicator( // Calling the progress bars
-                    progress = { progress / maxProgress },
-                    modifier = Modifier
-                        .weight(3f)
-                        .height(5.dp),
-                    color = activeTrack, // Choosing the color for the filled section
-                    trackColor = inactiveTrack // Choosing the color for the unfilled value
-                )
-
-                Spacer(modifier = Modifier.width(10.dp))
-
-                Text(
-                    text = "${progress}/${totals.getOrNull(index) ?: ""}",
-                    style = androidx.compose.ui.text.TextStyle(fontSize = 15.sp),
-                    modifier = Modifier.weight(0.9f)
-                )
-            }
-        }
-        TotalValues(context, userId, userGender) // Display total values for each stat
+        Spacer(modifier = Modifier.height(16.dp))
 
         Column(
             modifier = Modifier
-                .fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally, // Center buttons horizontally
-            verticalArrangement = Arrangement.spacedBy(5.dp) // Adds space between buttons
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
         ){
-            //NutriCoach Page
+            //#TODO Create Dashboard
+
+            //Clinician Logout button
             Button(
-                modifier = Modifier.sizeIn(minWidth = 120.dp, minHeight = 40.dp),
+                modifier = Modifier.fillMaxWidth(),
                 onClick = {
-                    selectedItemState.value = 2
-                    navController.navigate("NutriCoach") // Navigate to the NutriCoach page
+                    navController.navigate("Settings")
                 }
             ){
-                Image( //Icon for nutricoach button
-                    painter = painterResource(id = R.drawable.rocket),
-                    contentDescription = "Rocket Image",
-                    modifier = Modifier
-                        .size(25.dp)
-                        .padding(end = 5.dp)
-                )
-                Text("Improve my diet!")
+                Text("Done")
             }
         }
     }
@@ -718,6 +816,105 @@ fun TotalValues(context: Context, userId: String, userGender: String) {
                 )
                 Text("Share with someone") // Button text
             }
+        }
+    }
+}
+
+@Composable
+fun FruitSearchScreen(viewModel: FruitViewModel = viewModel()) {
+    var input by remember { mutableStateOf("") }
+
+    val fruit by viewModel.fruit.collectAsState()
+    val error by viewModel.error.collectAsState()
+
+    Column{
+        Text( // Providing information about the food quality score
+            text = "Fruit Name",
+            fontWeight = FontWeight.Bold,
+            color = Color.Gray
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ){
+            OutlinedTextField(
+                modifier = Modifier.sizeIn(minWidth = 200.dp, minHeight = 25.dp),
+                value = input,
+                onValueChange = { input = it },
+                label = { Text("Enter fruit name") },
+                shape = RoundedCornerShape(35.dp)
+            )
+
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.CenterEnd
+            ){
+                Button(
+                    modifier = Modifier.sizeIn(maxWidth = 120.dp, minHeight = 25.dp),
+                    onClick = { viewModel.fetchFruit(input) }) {
+                    Icon(Icons.Outlined.Search, contentDescription = "Search")
+
+                    Spacer(modifier = Modifier.width(5.dp))
+
+                    Text("Details")
+                }
+            }
+
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        error?.let {
+            Text(text = it, color = MaterialTheme.colorScheme.error)
+        }
+
+        fruit?.let {
+            Text(
+                text = "Name: ${it.name}",
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = "Genus: ${it.genus}",
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = "Family: ${it.family}",
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = "Order: ${it.order}",
+                fontWeight = FontWeight.Bold
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "Nutrition:",
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = "Calories: ${it.nutritions.calories}",
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = "Carbs: ${it.nutritions.carbohydrates}",
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = "Protein: ${it.nutritions.protein}",
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = "Fat: ${it.nutritions.fat}",
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = "Sugar: ${it.nutritions.sugar}",
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }
