@@ -138,7 +138,7 @@ fun HomePage() {
     // Need to retrieve values from sharedPreferences to display user Id and need currentUserGender to retrieve the corresponding gender score
     val currentUserID = sharedPreferences.getString("currentUserID", "Unknown") ?: "Unknown"
     val currentUserGender = sharedPreferences.getString("Sex_${currentUserID}", "Unknown") ?: "Unknown"
-    val currentUserScore = sharedPreferences.getFloat("HEIFAtotalscore_${currentUserID}_$currentUserGender", 0f)
+    val currentUserScore = sharedPreferences.getFloat("HEIFApossibleScoreTotalscore_${currentUserID}_$currentUserGender", 0f)
 
     // Check if values have been correctly retrieved
     Log.d("DEBUG", "User ID: $currentUserID, Gender: $currentUserGender, Total Score: $currentUserScore")
@@ -282,8 +282,8 @@ fun InsightsPage(navController: NavHostController, selectedItemState: MutableSta
 
     Log.d("DEBUG", "Slider User ID: $currentUserID, Gender: $currentUserGender") // Check if the correct values have been retrieved
 
-    val columnNames = listOf("Discretionary", "Vegetables", "Fruit", "Grains/Cereals", "Wholegrains", "Meat", "Dairy", "Sodium", "Alcohol", "Water", "Sugar", "Saturated fat", "Unsaturated fat")
-    val totals = listOf("10.0", "10.0", "10.0", "5.0", "5.0", "10.0", "10.0", "10.0", "5.0", "5.0", "10.0", "5.0", "5.0")
+    val columnHeaders = listOf("Discretionary", "Vegetables", "Fruit", "Grains/Cereals", "Wholegrains", "Meat", "Dairy", "Sodium", "Alcohol", "Water", "Sugar", "Saturated fat", "Unsaturated fat")
+    val possibleScoreTotals = listOf("10.0", "10.0", "10.0", "5.0", "5.0", "10.0", "10.0", "10.0", "5.0", "5.0", "10.0", "5.0", "5.0")
 
     val (filteredColumns, userValues) = remember {
         genderFilteredColumns(context, currentUserID, currentUserGender)  // Lists column names based on the user gender
@@ -310,20 +310,20 @@ fun InsightsPage(navController: NavHostController, selectedItemState: MutableSta
         // Show the progress bars for each food category based on user gender
         filteredColumns.forEachIndexed { index, column ->
             var progress by remember { mutableStateOf(userValues.getOrNull(index)?.toFloatOrNull() ?: 0f) } // Holds the value of the category
-            val maxProgress = totals.getOrNull(index)?.toFloat() ?: 10f // Call the max values and default to 10 if none
+            val maxProgress = possibleScoreTotals.getOrNull(index)?.toFloat() ?: 10f // Call the max values and default to 10 if none
 
             // Defining my colours for the track
             val inactiveTrack = colorResource(id = R.color.purple_200)
             val activeTrack = colorResource(id = R.color.purple_500)
 
-            Row( // Put the column name, progress bar and totals in the same row
+            Row( // Put the column name, progress bar and possibleScoreTotals in the same row
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 6.dp),
                 horizontalArrangement = Arrangement.Center
             ){
                 Text(
-                    text = columnNames.getOrNull(index) ?: "", // Retrieve column names then display, "" if there's null
+                    text = columnHeaders.getOrNull(index) ?: "", // Retrieve column names then display, "" if there's null
                     style = androidx.compose.ui.text.TextStyle(fontSize = 14.sp),
                     modifier = Modifier.weight(1.5f),
                     fontWeight = FontWeight.Bold
@@ -345,7 +345,7 @@ fun InsightsPage(navController: NavHostController, selectedItemState: MutableSta
                 Spacer(modifier = Modifier.width(10.dp))
 
                 Text(
-                    text = "${progress}/${totals.getOrNull(index) ?: ""}",
+                    text = "${progress}/${possibleScoreTotals.getOrNull(index) ?: ""}",
                     style = androidx.compose.ui.text.TextStyle(fontSize = 15.sp),
                     modifier = Modifier.weight(0.9f)
                 )
@@ -647,23 +647,22 @@ fun genderFilteredColumns(context: Context, currentUserID: String, currentUserGe
     val userValues = mutableListOf<String>()
 
     try { // Open the CSV file from assets
-        val inputStream = context.assets.open("data.csv")
-        val reader = BufferedReader(InputStreamReader(inputStream))
+        val reader = BufferedReader(InputStreamReader(context.assets.open("data.csv")))
         val lines = reader.readLines() // Read all the lines from the data.csv file
 
         if (lines.isNotEmpty()) {
-            val headers = lines.first().split(",").map { it.trim() } // Get the first line the headers
+            val tableHeaders = lines.first().split(",").map { it.trim() } // Get the first line the tableHeaders
             val relevantIndices = mutableListOf<Int>() // List to store the column indices based on the user gender's food categories
 
             // Find gender-specific columns
-            headers.forEachIndexed { index, column ->
+            tableHeaders.forEachIndexed { index, column ->
                 if (currentUserGender.equals("Female", ignoreCase = false) && column.endsWith("Female", ignoreCase = false)) { // Ignore case false to check for upper and lower case
-                    if (index != 4) { // Ignore the HEIFAtotalscoreFemale but append all the other columns that end with "Female"
+                    if (index != 4) { // Ignore the HEIFApossibleScoreTotalscoreFemale but append all the other columns that end with "Female"
                         filteredColumns.add(column) // Stored column names
                         relevantIndices.add(index) // Stored column indices
                     }
                 } else if (currentUserGender.equals("Male", ignoreCase = false) && column.endsWith("Male", ignoreCase = false)) {
-                    if (index != 3) { // Ignore the HEIFAtotalscoreMale but append all the other columns that end with "Male"
+                    if (index != 3) { // Ignore the HEIFApossibleScoreTotalscoreMale but append all the other columns that end with "Male"
                         filteredColumns.add(column)
                         relevantIndices.add(index)
                     }
@@ -671,19 +670,19 @@ fun genderFilteredColumns(context: Context, currentUserID: String, currentUserGe
             }
 
             // Find the corresponding row for the currentUserID
-            val userRow = lines.drop(1).find { line ->
-                val rowValues = line.split(",").map { it.trim() }
-                rowValues.size > 1 && rowValues[1] == currentUserID  // Check the second column for the currentUserID
+            val currentUserRow = lines.drop(1).find { line ->
+                val currentUserData = line.split(",").map { it.trim() }
+                currentUserData.size > 1 && currentUserData[1] == currentUserID  // Check the second column for the currentUserID
             }?.split(",") ?: emptyList()
 
-            Log.d("CSVProcessor", "User Row: $userRow") // Check if the correct row is being retrieved for the user
+            Log.d("CSVProcessor", "User Row: $currentUserRow") // Check if the correct row is being retrieved for the user
 
-            if (userRow.isNotEmpty()) { // Find relevant values for each column based on the gender
+            if (currentUserRow.isNotEmpty()) { // Find relevant values for each column based on the gender
                 relevantIndices.forEach { index ->
                     if (!(currentUserGender.equals("male", ignoreCase = true) && index == 3) &&
                         !(currentUserGender.equals("female", ignoreCase = true) && index == 4)) {
                         userValues.add(
-                            userRow.getOrNull(index)?.trim() ?: "0"
+                            currentUserRow.getOrNull(index)?.trim() ?: "0"
                         )
                     }
                 }
@@ -705,37 +704,36 @@ fun genderFilteredColumns(context: Context, currentUserID: String, currentUserGe
 // Function to show HEIFAtotalvaluegender
 @Composable
 fun TotalValues(context: Context, currentUserID: String, currentUserGender: String) {
-    var genderedScore by remember { mutableStateOf(0f) } // Mutable variable for the HEIFAtotalsvaluegender progress bars
+    var genderedScore by remember { mutableStateOf(0f) }
 
     try { // Open the CSV file from assets, try block to handle potential errors
-        val inputStream = context.assets.open("data.csv")
-        val reader = BufferedReader(InputStreamReader(inputStream))
+        val reader = BufferedReader(InputStreamReader(context.assets.open("data.csv")))
         val lines = reader.readLines()
 
         Log.d("CSVProcessor", "CSV file content: $lines") // Log the entire CSV content to check
 
         if (lines.isNotEmpty()) { // Make sure file not empty
-            val headers = lines.first().split(",").map { it.trim() } // Get headers from the first row
-            Log.d("CSVProcessor", "Headers: $headers") // Check if headers are retrieved
+            val tableHeaders = lines.first().split(",").map { it.trim() } // Get tableHeaders from the first row
+            Log.d("CSVProcessor", "Headers: $tableHeaders") // Check if tableHeaders are retrieved
 
             // Find the currentUserID row
-            val userRow = lines.drop(1).find { line ->
-                val rowValues = line.split(",").map { it.trim() }
-                rowValues.size > 1 && rowValues[1] == currentUserID // Check if currentUserID is in the second column
+            val currentUserRow = lines.drop(1).find { line ->
+                val currentUserData = line.split(",").map { it.trim() }
+                currentUserData.size > 1 && currentUserData[1] == currentUserID // Check if currentUserID is in the second column
             }?.split(",") ?: emptyList() // If user row found then remove its commas otherwise return an empty list
 
-            Log.d("CSVProcessor", "User Row: $userRow")  // Check if rows are retrieved
+            Log.d("CSVProcessor", "User Row: $currentUserRow")  // Check if rows are retrieved
 
             // Find the column index based on gender
-            if (userRow.isNotEmpty()) {
+            if (currentUserRow.isNotEmpty()) {
                 var genderedScoreString: String? = null // Initialise variable to store gender value
 
                 if (currentUserGender.equals("Male", ignoreCase = true)) { // Access the 4th column if Male
-                    genderedScoreString = userRow.getOrNull(3)?.trim()
+                    genderedScoreString = currentUserRow.getOrNull(3)?.trim()
                 }
                 else if (currentUserGender.equals("Female", ignoreCase = true)) { // Access the 5th column if Male
                     genderedScoreString =
-                        userRow.getOrNull(4)?.trim() // 5th column for female
+                        currentUserRow.getOrNull(4)?.trim() // 5th column for female
                 }
 
                 Log.d("CSVProcessor", "Gender-specific value string for $currentUserGender: $genderedScoreString") // Check the HEIFA gender total value retrieved
