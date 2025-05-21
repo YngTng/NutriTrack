@@ -37,10 +37,12 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
 dependencies {
+    implementation(libs.generativeai)
     val nav_version = "2.8.9"
     implementation("androidx.navigation:navigation-compose:$nav_version")
 

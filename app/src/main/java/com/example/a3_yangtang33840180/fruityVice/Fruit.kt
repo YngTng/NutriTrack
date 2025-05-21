@@ -1,4 +1,4 @@
-package com.example.a3_yangtang33840180.data.fruityVice
+package com.example.a3_yangtang33840180.fruityVice
 
 data class Fruit(
     val name: String,

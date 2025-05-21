@@ -5,6 +5,8 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.Icons
@@ -32,7 +34,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.a3_yangtang33840180.data.fruityVice.FruitViewModel
+import com.example.a3_yangtang33840180.fruityVice.FruitViewModel
+import com.example.a3_yangtang33840180.genAI.GenAIScreen
 
 import com.example.a3_yangtang33840180.ui.theme.A3_YangTang33840180Theme
 import java.io.BufferedReader
@@ -403,6 +406,7 @@ fun NutricoachPage() {
             )
 
             //#TODO Add NutriCoach page content
+            GenAIScreen()
         }
     }
 }
