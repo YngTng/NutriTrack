@@ -392,7 +392,7 @@ fun NutricoachPage() {
                 .padding(horizontal = 16.dp),
         ){
             //#TODO Add NutriCoach page content
-            FruitSearchScreen()
+            SearchFruits()
 
 
             HorizontalDivider(
@@ -821,7 +821,7 @@ fun TotalValues(context: Context, userId: String, userGender: String) {
 }
 
 @Composable
-fun FruitSearchScreen(viewModel: FruitViewModel = viewModel()) {
+fun SearchFruits(viewModel: FruitViewModel = viewModel()) {
     var input by remember { mutableStateOf("") }
 
     val fruit by viewModel.fruit.collectAsState()

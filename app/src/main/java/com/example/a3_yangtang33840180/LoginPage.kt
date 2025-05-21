@@ -89,13 +89,13 @@ fun LoginScreen(context: Context, modifier: Modifier = Modifier) { // Login Scre
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ){
-        Text( // Login Text
+        Text(
             text = "Log In",
             style = androidx.compose.ui.text.TextStyle(fontSize = 40.sp),
             fontWeight = FontWeight.Bold
         )
 
-        Spacer(modifier = Modifier.height(4.dp)) // Space under login text
+        Spacer(modifier = Modifier.height(4.dp)) // Add space under text
 
         // Show dropdown for UserIds
         ExposedDropdownMenuBox(
@@ -142,7 +142,7 @@ fun LoginScreen(context: Context, modifier: Modifier = Modifier) { // Login Scre
             label = { Text(text = "Phone Number") },
             modifier = Modifier.fillMaxWidth(),
             visualTransformation = PasswordVisualTransformation(), // Hide the text
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone), // Set the keyboard to be for typing numbers
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone), // Limit input to numbers only
         )
 
         Spacer(modifier = Modifier.height(16.dp))
