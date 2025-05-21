@@ -135,13 +135,13 @@ fun HomePage() {
     val context = LocalContext.current
     val sharedPreferences = context.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
 
-    // Need to retrieve values from sharedPreferences to display user Id and need userGender to retrieve the corresponding gender score
-    val userId = sharedPreferences.getString("userId", "Unknown") ?: "Unknown"
-    val userGender = sharedPreferences.getString("Sex_${userId}", "Unknown") ?: "Unknown"
-    val totalScore = sharedPreferences.getFloat("HEIFAtotalscore_${userId}_$userGender", 0f)
+    // Need to retrieve values from sharedPreferences to display user Id and need currentUserGender to retrieve the corresponding gender score
+    val currentUserID = sharedPreferences.getString("currentUserID", "Unknown") ?: "Unknown"
+    val currentUserGender = sharedPreferences.getString("Sex_${currentUserID}", "Unknown") ?: "Unknown"
+    val currentUserScore = sharedPreferences.getFloat("HEIFAtotalscore_${currentUserID}_$currentUserGender", 0f)
 
     // Check if values have been correctly retrieved
-    Log.d("DEBUG", "User ID: $userId, Gender: $userGender, Total Score: $totalScore")
+    Log.d("DEBUG", "User ID: $currentUserID, Gender: $currentUserGender, Total Score: $currentUserScore")
 
     Column(
         modifier = Modifier
@@ -155,11 +155,12 @@ fun HomePage() {
         // Greeting the user
         Text(
             text = "Hello,",
-            style = androidx.compose.ui.text.TextStyle(fontSize = 25.sp)
+            fontSize = 25.sp,
+            modifier = Modifier.padding(bottom = 8.dp)
         )
         Text(
-            text = "User $userId",
-            style = androidx.compose.ui.text.TextStyle(fontSize = 30.sp),
+            text = "User $currentUserID",
+            fontSize = 40.sp,
             fontWeight = FontWeight.Bold
         )
 
@@ -172,7 +173,7 @@ fun HomePage() {
             verticalAlignment = Alignment.CenterVertically
         ){
             Text(
-                text = "You've already filled in your Food Intake Questionnaire, but you can change details here:",
+                text = "You've already filled in your Food\nIntake Questionnaire, but you can\nchange details here:",
                 style = androidx.compose.ui.text.TextStyle(fontSize = 15.sp),
                 modifier = Modifier.weight(1f)
             )
@@ -184,7 +185,12 @@ fun HomePage() {
                     .padding(horizontal = 30.dp, vertical = 8.dp)
                     .height(40.dp)
             ){
-                Text(text = "Edit") // Button text
+                Icon(
+                    imageVector = Icons.Filled.Edit,
+                    contentDescription = "Edits",
+                    Modifier.padding(end = 6.dp)
+                )
+                Text("Edit")
             }
         }
 
@@ -201,7 +207,7 @@ fun HomePage() {
 
         Spacer(modifier = Modifier.height(10.dp)) // Add space
 
-        // Telling user their user score
+        // Display current user score
         Text(
             text = "My Score",
             style = androidx.compose.ui.text.TextStyle(fontSize = 18.sp),
@@ -231,7 +237,7 @@ fun HomePage() {
                 contentAlignment = Alignment.CenterEnd
             ){
                 Text(
-                    text = "$totalScore / 100", // Displays their total score based on their user id and gender out of 100
+                    text = "$currentUserScore / 100", // Displays their total score based on their user id and gender out of 100
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.Green
@@ -248,7 +254,7 @@ fun HomePage() {
             color = Color.LightGray  // Light colour
         )
 
-        Spacer(modifier = Modifier.height(10.dp)) // Adds space
+        Spacer(modifier = Modifier.height(10.dp)) // Add space
 
         Text( // Providing information about the food quality score
             text = "What is the Food Quality Score?",
@@ -256,7 +262,7 @@ fun HomePage() {
             fontWeight = FontWeight.Bold
         )
 
-        Spacer(modifier = Modifier.height(10.dp)) // Adds space
+        Spacer(modifier = Modifier.height(10.dp)) // Add space
 
         Text(
             text = "Your Food Quality Score provides a snapshot of how well your eating patterns align with established food guidelines, helping you identify both strengths and opportunities for improvement in your diet.\n\nThis personalised measurement considers various food groups including vegetables, fruits, whole grains, and proteins to give you practical insights for making healthier food choices.",
@@ -268,19 +274,19 @@ fun HomePage() {
 // Function for the Insights page to display the progress bars
 @Composable
 fun InsightsPage(navController: NavHostController, selectedItemState: MutableState<Int> = remember { mutableIntStateOf(0) }) {
-    // Retrieve the userId and userGender
+    // Retrieve the currentUserID and currentUserGender
     val context = LocalContext.current
     val sharedPreferences = context.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
-    val userId = sharedPreferences.getString("userId", "Unknown") ?: "Unknown"
-    val userGender = sharedPreferences.getString("Sex_$userId", "Unknown") ?: "Unknown"
+    val currentUserID = sharedPreferences.getString("currentUserID", "Unknown") ?: "Unknown"
+    val currentUserGender = sharedPreferences.getString("Sex_$currentUserID", "Unknown") ?: "Unknown"
 
-    Log.d("DEBUG", "Slider User ID: $userId, Gender: $userGender") // Check if the correct values have been retrieved
+    Log.d("DEBUG", "Slider User ID: $currentUserID, Gender: $currentUserGender") // Check if the correct values have been retrieved
 
     val columnNames = listOf("Discretionary", "Vegetables", "Fruit", "Grains/Cereals", "Wholegrains", "Meat", "Dairy", "Sodium", "Alcohol", "Water", "Sugar", "Saturated fat", "Unsaturated fat")
     val totals = listOf("10.0", "10.0", "10.0", "5.0", "5.0", "10.0", "10.0", "10.0", "5.0", "5.0", "10.0", "5.0", "5.0")
 
     val (filteredColumns, userValues) = remember {
-        getColumnsBasedOnGender(context, userId, userGender)  // Lists column names based on the user gender
+        genderFilteredColumns(context, currentUserID, currentUserGender)  // Lists column names based on the user gender
     }
 
     Column( // Having a column to put all the UI elements inside
@@ -345,13 +351,13 @@ fun InsightsPage(navController: NavHostController, selectedItemState: MutableSta
                 )
             }
         }
-        TotalValues(context, userId, userGender) // Display total values for each stat
+        TotalValues(context, currentUserID, currentUserGender) // Display total values for each stat
 
         Column(
             modifier = Modifier
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally, // Center buttons horizontally
-            verticalArrangement = Arrangement.spacedBy(5.dp) // Adds space between buttons
+            verticalArrangement = Arrangement.spacedBy(5.dp) // Add space between buttons
         ){
             //NutriCoach Page
             Button(
@@ -635,8 +641,8 @@ fun ClinicianDashboardPage(navController: NavHostController) {
     }
 }
 
-// Function to get the column information based on the userGender
-fun getColumnsBasedOnGender(context: Context, userId: String, userGender: String): Pair<List<String>, List<String>> {
+// Function to get the column information based on the currentUserGender
+fun genderFilteredColumns(context: Context, currentUserID: String, currentUserGender: String): Pair<List<String>, List<String>> {
     val filteredColumns = mutableListOf<String>()
     val userValues = mutableListOf<String>()
 
@@ -651,12 +657,12 @@ fun getColumnsBasedOnGender(context: Context, userId: String, userGender: String
 
             // Find gender-specific columns
             headers.forEachIndexed { index, column ->
-                if (userGender.equals("Female", ignoreCase = false) && column.endsWith("Female", ignoreCase = false)) { // Ignore case false to check for upper and lower case
+                if (currentUserGender.equals("Female", ignoreCase = false) && column.endsWith("Female", ignoreCase = false)) { // Ignore case false to check for upper and lower case
                     if (index != 4) { // Ignore the HEIFAtotalscoreFemale but append all the other columns that end with "Female"
                         filteredColumns.add(column) // Stored column names
                         relevantIndices.add(index) // Stored column indices
                     }
-                } else if (userGender.equals("Male", ignoreCase = false) && column.endsWith("Male", ignoreCase = false)) {
+                } else if (currentUserGender.equals("Male", ignoreCase = false) && column.endsWith("Male", ignoreCase = false)) {
                     if (index != 3) { // Ignore the HEIFAtotalscoreMale but append all the other columns that end with "Male"
                         filteredColumns.add(column)
                         relevantIndices.add(index)
@@ -664,18 +670,18 @@ fun getColumnsBasedOnGender(context: Context, userId: String, userGender: String
                 }
             }
 
-            // Find the corresponding row for the userId
+            // Find the corresponding row for the currentUserID
             val userRow = lines.drop(1).find { line ->
                 val rowValues = line.split(",").map { it.trim() }
-                rowValues.size > 1 && rowValues[1] == userId  // Check the second column for the userId
+                rowValues.size > 1 && rowValues[1] == currentUserID  // Check the second column for the currentUserID
             }?.split(",") ?: emptyList()
 
             Log.d("CSVProcessor", "User Row: $userRow") // Check if the correct row is being retrieved for the user
 
             if (userRow.isNotEmpty()) { // Find relevant values for each column based on the gender
                 relevantIndices.forEach { index ->
-                    if (!(userGender.equals("male", ignoreCase = true) && index == 3) &&
-                        !(userGender.equals("female", ignoreCase = true) && index == 4)) {
+                    if (!(currentUserGender.equals("male", ignoreCase = true) && index == 3) &&
+                        !(currentUserGender.equals("female", ignoreCase = true) && index == 4)) {
                         userValues.add(
                             userRow.getOrNull(index)?.trim() ?: "0"
                         )
@@ -683,7 +689,7 @@ fun getColumnsBasedOnGender(context: Context, userId: String, userGender: String
                 }
 
             } else {
-                Log.e("CSVProcessor", "User row not found for userId: $userId")
+                Log.e("CSVProcessor", "User row not found for currentUserID: $currentUserID")
             }
 
             Log.d("CSVProcessor", "Filtered Columns: $filteredColumns") // Column names based on user gender
@@ -698,8 +704,8 @@ fun getColumnsBasedOnGender(context: Context, userId: String, userGender: String
 
 // Function to show HEIFAtotalvaluegender
 @Composable
-fun TotalValues(context: Context, userId: String, userGender: String) {
-    var genderSpecificValue by remember { mutableStateOf(0f) } // Mutable variable for the HEIFAtotalsvaluegender progress bars
+fun TotalValues(context: Context, currentUserID: String, currentUserGender: String) {
+    var genderedScore by remember { mutableStateOf(0f) } // Mutable variable for the HEIFAtotalsvaluegender progress bars
 
     try { // Open the CSV file from assets, try block to handle potential errors
         val inputStream = context.assets.open("data.csv")
@@ -712,31 +718,31 @@ fun TotalValues(context: Context, userId: String, userGender: String) {
             val headers = lines.first().split(",").map { it.trim() } // Get headers from the first row
             Log.d("CSVProcessor", "Headers: $headers") // Check if headers are retrieved
 
-            // Find the userId row
+            // Find the currentUserID row
             val userRow = lines.drop(1).find { line ->
                 val rowValues = line.split(",").map { it.trim() }
-                rowValues.size > 1 && rowValues[1] == userId // Check if userId is in the second column
+                rowValues.size > 1 && rowValues[1] == currentUserID // Check if currentUserID is in the second column
             }?.split(",") ?: emptyList() // If user row found then remove its commas otherwise return an empty list
 
             Log.d("CSVProcessor", "User Row: $userRow")  // Check if rows are retrieved
 
             // Find the column index based on gender
             if (userRow.isNotEmpty()) {
-                var genderSpecificValueString: String? = null // Initialise variable to store gender value
+                var genderedScoreString: String? = null // Initialise variable to store gender value
 
-                if (userGender.equals("Male", ignoreCase = true)) { // Access the 4th column if Male
-                    genderSpecificValueString = userRow.getOrNull(3)?.trim()
+                if (currentUserGender.equals("Male", ignoreCase = true)) { // Access the 4th column if Male
+                    genderedScoreString = userRow.getOrNull(3)?.trim()
                 }
-                else if (userGender.equals("Female", ignoreCase = true)) { // Access the 5th column if Male
-                    genderSpecificValueString =
+                else if (currentUserGender.equals("Female", ignoreCase = true)) { // Access the 5th column if Male
+                    genderedScoreString =
                         userRow.getOrNull(4)?.trim() // 5th column for female
                 }
 
-                Log.d("CSVProcessor", "Gender-specific value string for $userGender: $genderSpecificValueString") // Check the HEIFA gender total value retrieved
+                Log.d("CSVProcessor", "Gender-specific value string for $currentUserGender: $genderedScoreString") // Check the HEIFA gender total value retrieved
 
-                genderSpecificValue = genderSpecificValueString?.toFloatOrNull() ?: 0f // Convert string to float
+                genderedScore = genderedScoreString?.toFloatOrNull() ?: 0f // Convert string to float
             } else {
-                Log.e("CSVProcessor", "User row not found for userId: $userId")
+                Log.e("CSVProcessor", "User row not found for currentUserID: $currentUserID")
             }
         }
         reader.close() // Close the reader
@@ -760,29 +766,28 @@ fun TotalValues(context: Context, userId: String, userGender: String) {
             modifier = Modifier.padding(1.dp),
             verticalAlignment = Alignment.CenterVertically
         ){
-            var progress by remember { mutableStateOf(genderSpecificValue) } // Mutable variable to hold HEIFA gender value
-
-            // My colours for the progress bar
+            var progress by remember { mutableStateOf(genderedScore) } // Mutable variable to hold HEIFA gender value
+            
             val inactiveTrack = colorResource(id = R.color.purple_200)
             val activeTrack = colorResource(id = R.color.purple_500)
 
             // Use launched effect to make sure the slider stays the same
-            LaunchedEffect(genderSpecificValue) {
-                progress = genderSpecificValue // Keeps the progress value to the gender specific value
+            LaunchedEffect(genderedScore) {
+                progress = genderedScore // Keeps the progress value to the gender specific value
             }
 
             LinearProgressIndicator( // Progress bars
                 progress = { progress / 100f },
                 modifier = Modifier
-                    .weight(5f) // Adjusts length
-                    .height(6.dp), // Adjusts thickness
-                color = activeTrack, // Filled bar
-                trackColor = inactiveTrack // Unfilled bar
+                    .weight(5f)
+                    .height(6.dp),
+                color = activeTrack,
+                trackColor = inactiveTrack
             )
 
-            Spacer(modifier = Modifier.width(10.dp)) // Adds space
+            Spacer(modifier = Modifier.width(10.dp)) // Add space
 
-            Text( // Displays the gender value out of 100
+            Text( // Displays the score value out of 100
                 text = "${progress}/100",
                 style = androidx.compose.ui.text.TextStyle(fontSize = 14.sp),
                 modifier = Modifier.weight(1f)
@@ -790,21 +795,21 @@ fun TotalValues(context: Context, userId: String, userGender: String) {
         }
 
         val context = LocalContext.current
-        val shareText = "My total food quality score is $genderSpecificValue!" // Sharing message for the gender specific value
+        val shareScore = "My total food quality score is $genderedScore!" // Sharing message for the gender specific value
 
-        Spacer(modifier = Modifier.height(20.dp)) // Adds space
+        Spacer(modifier = Modifier.height(20.dp)) // Add space
 
         Column(
             modifier = Modifier
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally, // Center buttons horizontally
-            verticalArrangement = Arrangement.spacedBy(5.dp) // Adds space between buttons
+            verticalArrangement = Arrangement.spacedBy(5.dp) // Add space between buttons
         ){
             Button( // Share button to send food quality using an intent
                 onClick = {
                     val shareIntent = Intent(Intent.ACTION_SEND).apply {
                         type = "text/plain"
-                        putExtra(Intent.EXTRA_TEXT, shareText) // Add the share text
+                        putExtra(Intent.EXTRA_TEXT, shareScore) // Add the share text
                     }
                     // Start the activity to share the text
                     context.startActivity(Intent.createChooser(shareIntent, "Share with someone"))

@@ -67,10 +67,10 @@ fun LoginScreen(context: Context, modifier: Modifier = Modifier) { // Login Scre
     var selectedUserId by remember { mutableStateOf("") } // Stores selected UserId
     var phoneNumber by remember { mutableStateOf("") } // Stores inputted PhoneNumber
     var userIds by remember { mutableStateOf(listOf<String>()) } // Stores UserIds
-    var errorMessage by remember { mutableStateOf("") } // Stores error message if validation fails
+    var logInErrorMsg by remember { mutableStateOf("") } // Stores error message if validation fails
     val switchContext = LocalContext.current
 
-    var expanded by remember { mutableStateOf(false) }  // Dropdown menu is collapsed by default (false)
+    var dropDownExpanded by remember { mutableStateOf(false) }  // Dropdown menu is collapsed by default (false)
 
     // Load UserId from data.csv file when screen displays
     LaunchedEffect(context) {
@@ -99,8 +99,8 @@ fun LoginScreen(context: Context, modifier: Modifier = Modifier) { // Login Scre
 
         // Show dropdown for UserIds
         ExposedDropdownMenuBox(
-            expanded = expanded, // Represents whether dropdown is open or closed
-            onExpandedChange = { expanded = !expanded } // Switches the states when called
+            expanded = dropDownExpanded, // Represents whether dropdown is open or closed
+            onExpandedChange = { dropDownExpanded = !dropDownExpanded } // Switches the states when called
         )
         {
             OutlinedTextField(
@@ -111,20 +111,20 @@ fun LoginScreen(context: Context, modifier: Modifier = Modifier) { // Login Scre
                     .fillMaxWidth()
                     .menuAnchor(), // Add the dropdown to the text field
                 readOnly = true, // Make text field read only
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) }
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropDownExpanded) }
             )
 
             // Dropdown menu for the user IDs
             ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false } // Close dropdown if clicked outside
+                expanded = dropDownExpanded,
+                onDismissRequest = { dropDownExpanded = false } // Close dropdown if clicked outside
             ){
                 userIds.forEach { id -> // Loop through all UserIds
                     DropdownMenuItem(
                         text = { Text(id) },
                         onClick = {
                             selectedUserId = id // When UserId is clicked, set it as the selected UserId
-                            expanded = false // Close the dropdown menu
+                            dropDownExpanded = false // Close the dropdown menu
 
                             editor.putString("userId", id).apply() // Save selected UserId in SharedPreferences
 
@@ -148,9 +148,9 @@ fun LoginScreen(context: Context, modifier: Modifier = Modifier) { // Login Scre
         Spacer(modifier = Modifier.height(16.dp))
 
         // Show error message if error
-        if (errorMessage.isNotEmpty()) {
+        if (logInErrorMsg.isNotEmpty()) {
             Text(
-                text = errorMessage, // Display the error message
+                text = logInErrorMsg, // Display the error message
                 color = MaterialTheme.colorScheme.error, // Make the message in red
                 textAlign = TextAlign.Center
             )
@@ -169,7 +169,7 @@ fun LoginScreen(context: Context, modifier: Modifier = Modifier) { // Login Scre
                 if (isValid) {
                     switchContext.startActivity(Intent(switchContext, QuestionnairePage::class.java)) // Goes to next screen if valid
                 } else {
-                    errorMessage = "Invalid User ID or Phone Number." // Shows error message if invalid
+                    logInErrorMsg = "Invalid User ID or Phone Number." // Display error message
                 }
             },
             modifier = Modifier.fillMaxWidth()
@@ -200,7 +200,7 @@ fun loadUserIdsFromCSV(context: Context, fileName: String): List<String> {
                 if (values.isNotEmpty() && values[1].isNotBlank()) {
                     userIds.add(values[1])  // Add the second column UserId, to the list
 
-                    val userGender = values[2].trim() //Get gender info from column 3, trim any whitespaces
+                    val gender = values[2].trim() //Get gender info from column 3, trim any whitespaces
                     val userId = values[1]
 
                     val sharedPreferences = context.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
@@ -210,17 +210,17 @@ fun loadUserIdsFromCSV(context: Context, fileName: String): List<String> {
                     val totalScoreMale = values[3].toFloatOrNull() ?: 0f // Get total HEIFA score for males in Column 4 (0 if value missing)
                     val totalScoreFemale = values[4].toFloatOrNull() ?: 0f // Get total HEIFA score for females in Column 5
 
-                    // Check userGender and store if aligned
-                    if (userGender.equals("Female", ignoreCase = true)) { // Check if userGender is female, ignore whether capitalised or not
+                    // Check gender and store if aligned
+                    if (gender.equals("Female", ignoreCase = true)) { // Check if gender is female, ignore whether capitalised or not
                         editor.putFloat("HEIFAtotalscore_${userId}_Female", totalScoreFemale) // Save score if true
                         Log.d("DEBUG", "Stored Female score for user $userId: $totalScoreFemale") // Check if score is saved
 
-                    } else if (userGender.equals("Male", ignoreCase = true)) { // Check if userGender is female, ignore whether capitalised or not
+                    } else if (gender.equals("Male", ignoreCase = true)) { // Check if gender is female, ignore whether capitalised or not
                         editor.putFloat("HEIFAtotalscore_${userId}_Male", totalScoreMale) // Save score if true
                         Log.d("DEBUG", "Stored Male score for user $userId: $totalScoreMale") // Check if score is saved
                     }
 
-                    editor.putString("Sex_${userId}", userGender).apply() // Save user gender with their Id
+                    editor.putString("Sex_${userId}", gender).apply() // Save user gender with their Id
 
                 }
             }
@@ -228,25 +228,23 @@ fun loadUserIdsFromCSV(context: Context, fileName: String): List<String> {
     } catch (e: Exception) {
         Log.e("ERROR", "Failed to load user IDs", e) // Check if something goes wrong when loading data
     }
-    return userIds // Return list of loaded UserIds so value can be used outside function
+    return userIds // Return list of User ID
 }
 
 
-// Check user credentials from data.csv
-fun validateUser(context: Context, fileName: String, userId: String, phone: String): Boolean { // Boolean checks if true or false
+// Check credentials from csv
+fun validateUser(context: Context, fileName: String, userId: String, phone: String): Boolean {
     try {
-        val inputStream = context.assets.open(fileName) // Open data.csv file from assets folder
-
-        // Reads the data from the data.csv file
-        val reader = BufferedReader(InputStreamReader(inputStream))
+        // Reads data from the csv file
+        val reader = BufferedReader(InputStreamReader(context.assets.open(fileName)))
         reader.useLines { lines ->
-            lines.drop(1).forEach { line ->  // Skip first line and loop through the rest
+            lines.drop(1).forEach { line ->  // Skip headers and loop through the rest
                 val values = line.split(",") // Split the line into columns
                 if (values.size >= 2) { // Check if there are at least two values (for phone number and user id)
-                    val csvUserId = values[1].trim() // Get UserId from data.csv and trim spaces
-                    val csvPhone = values[0].trim() // Get phone number from data.csv and trim spaces
+                    val csvUserId = values[1].trim() // Retrieve user ID and trim spaces
+                    val csvPhone = values[0].trim() // Retrieve number and trim spaces
 
-                    // If both UserId and phone match then return true
+                    // If both credentials match, return true
                     if (csvUserId == userId && csvPhone == phone) {
                         return true
                     }

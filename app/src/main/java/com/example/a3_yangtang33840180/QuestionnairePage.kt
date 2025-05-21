@@ -1,7 +1,6 @@
 package com.example.a3_yangtang33840180
 
 import android.app.TimePickerDialog
-import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.Intent
 import android.os.Bundle
@@ -67,7 +66,7 @@ import androidx.compose.ui.unit.sp
 import com.example.a3_yangtang33840180.ui.theme.A3_YangTang33840180Theme
 import java.util.Calendar
 
-// This class is for questionnaire+modal
+
 class QuestionnairePage : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -90,22 +89,22 @@ class QuestionnairePage : ComponentActivity() {
                 }
 
                 // Creating mutable values that can be changed later
-                val mTime1 = remember { mutableStateOf("") }
-                val mTime2 = remember { mutableStateOf("") }
-                val mTime3 = remember { mutableStateOf("") }
+                val mBiggestMeal = remember { mutableStateOf("") }
+                val mSleep = remember { mutableStateOf("") }
+                val mWakeUp = remember { mutableStateOf("") }
 
                 // Calls the timeFunction for the time boxes to choose times
-                val mTimePickerDialog1 = timeFunction(mTime1, "time1_${currentUserID}"
+                val mBiggestMealTime = timeFunction(mBiggestMeal, "biggestMeal_${currentUserID}"
                 ) // Append userId to the time key
-                val mTimePickerDialog2 = timeFunction(mTime2, "time2_${currentUserID}")
-                val mTimePickerDialog3 = timeFunction(mTime3, "time3_${currentUserID}")
+                val mSleepTime = timeFunction(mSleep, "sleep_${currentUserID}")
+                val mWakeUpTime = timeFunction(mWakeUp, "wakeUp_${currentUserID}")
 
                 // Checks the state of the checkbox
                 val mCheckBoxState = remember { mutableStateOf(false) }
 
                 // List of drop down
-                val options = listOf("Health Devotee", "Mindful Eater", "Wellness Striver", "Balance Seeker", "Health Procrastinator", "Food Carefree")
-                var mDropDownValue by remember { mutableStateOf(options[0]) } // Default dropdown menu option is Health Devotee
+                val personas = listOf("Health Devotee", "Mindful Eater", "Wellness Striver", "Balance Seeker", "Health Procrastinator", "Food Carefree")
+                var mPersonaValue by remember { mutableStateOf(personas[0]) } // Default dropdown menu option is Health Devotee
 
                 Scaffold(
                     modifier = Modifier.fillMaxSize()
@@ -166,10 +165,10 @@ class QuestionnairePage : ComponentActivity() {
                             Text(text = "Which persona best fits you?", fontWeight = FontWeight.Bold) // Asking user which persona fits them
 
                             // Dropdown menu to select a persona
-                            DropdownMenuExample(
-                                dropDownValue = mDropDownValue,
-                                onDropDownValueChange = { newValue ->
-                                    mDropDownValue = newValue }
+                            PersonaDropdown(
+                                personaValue = mPersonaValue,
+                                onPersonaValueChange = { newValue ->
+                                    mPersonaValue = newValue }
                             )
 
                             HorizontalDivider(
@@ -180,10 +179,10 @@ class QuestionnairePage : ComponentActivity() {
                             
                             Spacer(modifier = Modifier.height(15.dp))
 
-                            // Time Picker 1
+                            // Timepickers
                             Text(text = "Timings", fontWeight = FontWeight.Bold)
 
-                            // For each question, we show the text and a time box
+                            // Display the question and time input
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
                                     Text(
@@ -192,16 +191,16 @@ class QuestionnairePage : ComponentActivity() {
                                     )
                                 }
                                 Column {
-                                    TimeBox(
-                                        time = mTime1,
-                                        onClick = { mTimePickerDialog1.show() }
+                                    TimeInput(
+                                        time = mBiggestMeal,
+                                        onClick = { mBiggestMealTime.show() }
                                     )
                                 }
                             }
 
                             Spacer(modifier = Modifier.height(10.dp))
 
-                            // Repeat for the second question
+                            // Display the question and time input
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
                                     Text(
@@ -210,16 +209,16 @@ class QuestionnairePage : ComponentActivity() {
                                     )
                                 }
                                 Column {
-                                    TimeBox(
-                                        time = mTime2,
-                                        onClick = { mTimePickerDialog2.show() }
+                                    TimeInput(
+                                        time = mSleep,
+                                        onClick = { mSleepTime.show() }
                                     )
                                 }
                             }
 
                             Spacer(modifier = Modifier.height(10.dp))
 
-                            // Repeat for the third question
+                            // Display the question and time input
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
                                     Text(
@@ -228,9 +227,9 @@ class QuestionnairePage : ComponentActivity() {
                                     )
                                 }
                                 Column {
-                                    TimeBox(
-                                        time = mTime3,
-                                        onClick = { mTimePickerDialog3.show() }
+                                    TimeInput(
+                                        time = mWakeUp,
+                                        onClick = { mWakeUpTime.show() }
                                     )
                                 }
                             }
@@ -239,14 +238,14 @@ class QuestionnairePage : ComponentActivity() {
 
                             val sharedPref = mContext.getSharedPreferences("UserPrefs_${getCurrentUserID()}.sp", MODE_PRIVATE).edit()
                             Button(onClick = {
-                                Log.d("MainActivity3", "Saving times for user $currentUserID")
-                                Log.d("MainActivity3", "Time1: ${mTime1.value}, Time2: ${mTime2.value}, Time3: ${mTime3.value}")
+                                Log.d("Questionnaire", "Saving times for user $currentUserID")
+                                Log.d("Questionnaire", "Biggest Meal Time: ${mBiggestMeal.value}, Sleep Time: ${mSleep.value}, Wake Up Time: ${mWakeUp.value}")
 
                                 // Save selected time and preferences in SharedPreferences for the CurrentUserId
-                                sharedPref.putString("time1_${currentUserID}", mTime1.value)
-                                sharedPref.putString("time2_${currentUserID}", mTime2.value)
-                                sharedPref.putString("time3_${currentUserID}", mTime3.value)
-                                sharedPref.putString("dropdown_selection_${currentUserID}", mDropDownValue)
+                                sharedPref.putString("biggestMeal_${currentUserID}", mBiggestMeal.value)
+                                sharedPref.putString("sleep_${currentUserID}", mSleep.value)
+                                sharedPref.putString("wakeUp_${currentUserID}", mWakeUp.value)
+                                sharedPref.putString("dropdown_selection_${currentUserID}", mPersonaValue)
                                 sharedPref.putBoolean("checkbox_${currentUserID}", mCheckBoxState.value)
                                 sharedPref.apply()
 
@@ -268,7 +267,7 @@ class QuestionnairePage : ComponentActivity() {
 @Composable
 fun getCurrentUserID(): String {
     val context = LocalContext.current
-    val sharedPreferences = context.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
+    val sharedPreferences = context.getSharedPreferences("UserPrefs", MODE_PRIVATE)
 
     // Get the user id or default to "unknown" if can't be found
     val userId = sharedPreferences.getString("userId", "Unknown") ?: "Unknown"
@@ -276,6 +275,39 @@ fun getCurrentUserID(): String {
     return sharedPreferences.getString("userId", "Unknown") ?: "Unknown"
 }
 
+// Top bar that displays "Food Intake Questionnaire" and a back button
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TopNavBar(modifier: Modifier = Modifier) {
+    // For the back button press
+    val onBackPressedDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
+
+    // Controls the scrolling behavior of the TopNavBar
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
+
+    // Creating the top bar
+    CenterAlignedTopAppBar(
+        title = {
+            Text(
+                "Food Intake Questionnaire", // Title of app
+                maxLines = 1 // Only show one line of title
+            )
+        },
+        // Creates back button
+        navigationIcon = {
+            IconButton(onClick = {
+                onBackPressedDispatcher?.onBackPressed() // When clicked go back
+            }) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Localised description"
+                )
+            }
+        },
+        scrollBehavior = scrollBehavior, // Adds scroll behaviour to top bar
+        modifier = modifier
+    )
+}
 
 // This function is for the checkboxes arranged the 3x3 grid
 @Composable
@@ -324,7 +356,7 @@ fun CheckboxFunction() {
                         modifier = Modifier.weight(1f)
                     ){
                         Checkbox( // Checkbox for each category
-                            checked = checkBoxStates[category]?.value ?: false,
+                            checked = checkBoxStates[category]?.value == true,
                             onCheckedChange = { newState ->
                                 // Update the checkbox state and save to SharedPreferences
                                 checkBoxStates[category]?.value = newState
@@ -341,11 +373,128 @@ fun CheckboxFunction() {
     }
 }
 
+// Shows the persona buttons that users can click to find out more information
+@Composable
+fun PersonaSelectionButtons() {
+    val personas = listOf( // List of persona options
+        "Health Devotee", "Mindful Eater", "Wellness Striver",
+        "Balance Seeker", "Health Procrastinator", "Food Carefree"
+    )
+
+    // Map for the persona descriptions, storing them in key value pairs
+    val optionDetails = mapOf(
+        "Health Devotee" to "I’m passionate about healthy eating & health plays a big part in my life. I use social media to follow active lifestyle personalities or get new recipes/exercise ideas. I may even buy superfoods or follow a particular type of diet. I like to think I am super healthy.",
+        "Mindful Eater" to "I’m health-conscious and being healthy and eating healthy is important to me. Although health means different things to different people, I make conscious lifestyle decisions about eating based on what I believe healthy means. I look for new recipes and healthy eating information on social media.",
+        "Wellness Striver" to "I aspire to be healthy (but struggle sometimes). Healthy eating is hard work! I’ve tried to improve my diet, but always find things that make it difficult to stick with the changes. Sometimes I notice recipe ideas or healthy eating hacks, and if it seems easy enough, I’ll give it a go.",
+        "Balance Seeker" to "I try and live a balanced lifestyle, and I think that all foods are okay in moderation. I shouldn’t have to feel guilty about eating a piece of cake now and again. I get all sorts of inspiration from social media like finding out about new restaurants, fun recipes and sometimes healthy eating tips.",
+        "Health Procrastinator" to "I’m contemplating healthy eating but it’s not a priority for me right now. I know the basics about what it means to be healthy, but it doesn’t seem relevant to me right now. I have taken a few steps to be healthier but I am not motivated to make it a high priority because I have too many other things going on in my life.",
+        "Food Carefree" to "I’m not bothered about healthy eating. I don’t really see the point and I don’t think about it. I don’t really notice healthy eating tips or recipes and I don’t care what I eat."
+    )
+
+    // Map for the persona pictures
+    val optionImages = mapOf(
+        "Health Devotee" to R.drawable.healthdevotee,
+        "Mindful Eater" to R.drawable.mindfuleater,
+        "Wellness Striver" to R.drawable.wellnessstriver,
+        "Balance Seeker" to R.drawable.balanceseeker,
+        "Health Procrastinator" to R.drawable.healthprocrastinator,
+        "Food Carefree" to R.drawable.foodcarefree
+    )
+
+    var selectedPersonaDesc by remember { mutableStateOf("") }
+    var showDialog by remember { mutableStateOf(false) }
+
+    //Grid for personas
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(1.dp)
+    ){
+
+        // Row 1
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(1.dp)
+        ){
+            personas.take(3).forEach { option ->
+                Button(
+                    onClick = {
+                        selectedPersonaDesc = option
+                        showDialog = true // Show dialog with details of the selected option
+                    },
+                    modifier = Modifier.padding(2.dp), // Padding around button
+                    contentPadding = PaddingValues(9.dp)
+                ){
+                    Text( // Text displayed for each persona
+                        option,
+                        textAlign = TextAlign.Center,
+                        fontSize = 14.sp
+                    )
+                }
+            }
+        }
+
+        // Row 2
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(1.dp)
+        ){
+            personas.drop(3).forEach { option ->
+                Button(
+                    onClick = {
+                        selectedPersonaDesc = option // Set selected option when clicked
+                        showDialog = true // Show dialog with details of selected option
+                    },
+                    modifier = Modifier.padding(2.dp), // Padding around the button
+                    contentPadding = PaddingValues(8.dp)
+                ){
+                    Text( // Text displayed for each persona
+                        option, textAlign = TextAlign.Center,
+                        fontSize = 14.sp
+                    )
+                }
+            }
+        }
+
+        // If the dialog should be displayed, then display it with the pop up
+        if (showDialog) {
+            AlertDialog(
+                onDismissRequest = { showDialog = false }, // If user taps outside then dismiss the dialog
+                text = {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        optionImages[selectedPersonaDesc]?.let { imageRes ->
+                            Image(
+                                painter = painterResource(id = imageRes),
+                                contentDescription = "$selectedPersonaDesc Image", // Show image of selected persona
+                                modifier = Modifier.size(140.dp)
+                            )
+                        }
+                        Text(
+                            text = selectedPersonaDesc, // Shows persona title
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 25.sp,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(8.dp)
+                        )
+                        Text(
+                            text = optionDetails[selectedPersonaDesc] ?: "No details available.", // Shows persona description
+                            fontSize = 14.sp,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                        Button(onClick = { showDialog = false }) {  // Close the dialog
+                            Text("Dismiss")
+                        }
+                    }
+                },
+                confirmButton = {}
+            )
+        }
+    }
+}
+
 // Dropdown to let user select an option
 @Composable
-fun DropdownMenuExample(
-    dropDownValue: String, // The current selected value in the dropdown
-    onDropDownValueChange: (String) -> Unit // Function to update the dropdown value
+fun PersonaDropdown(
+    personaValue: String, // The current selected value in the dropdown
+    onPersonaValueChange: (String) -> Unit // Function to update the dropdown value
 ){
     var expanded by remember { mutableStateOf(false) } // Check whether dropdown is open or closed
 
@@ -357,7 +506,7 @@ fun DropdownMenuExample(
     // Load the saved dropdown value when the composable is first launched
     LaunchedEffect(userId) {
         val loadedDropDown = sharedPref.getString("dropdown_selection_${userId}", "Health Devotee")
-        onDropDownValueChange(loadedDropDown ?: "Health Devotee") // Update the value
+        onPersonaValueChange(loadedDropDown ?: "Health Devotee") // Update the value
     }
 
     Box(modifier = Modifier.padding(16.dp)) {
@@ -367,7 +516,7 @@ fun DropdownMenuExample(
             modifier = Modifier.fillMaxWidth()
         ){
 
-            Text(text = dropDownValue, modifier = Modifier.weight(1f)) // Display the selected option
+            Text(text = personaValue, modifier = Modifier.weight(1f)) // Display the selected option
 
             Icon(
                 imageVector = Icons.Default.ArrowDropDown,
@@ -381,18 +530,18 @@ fun DropdownMenuExample(
             expanded = expanded,
             onDismissRequest = { expanded = false }
         ){
-            val options = listOf("Health Devotee", "Mindful Eater", "Wellness Striver", "Balance Seeker", "Health Procrastinator", "Food Carefree")
+            val personas = listOf("Health Devotee", "Mindful Eater", "Wellness Striver", "Balance Seeker", "Health Procrastinator", "Food Carefree")
 
-            options.forEach { option -> // Each item in the dropdown menu
+            personas.forEach { option -> // Each item in the dropdown menu
                 DropdownMenuItem(
                     text = { Text(option) },
                     onClick = {
-                        onDropDownValueChange(option) // Update the selected option
+                        onPersonaValueChange(option) // Update the selected option
                         expanded = false
 
                         // Save selected value in SharedPreferences
                         sharedPref.edit().putString("dropdown_selection_${userId}", option).apply()
-                        Log.d("DropdownMenuExample", "Saved for user $userId: $option")
+                        Log.d("PersonaDropdown", "Saved for user $userId: $option")
                     }
                 )
             }
@@ -437,7 +586,7 @@ fun timeFunction(mTime: MutableState<String>, timeKey: String): TimePickerDialog
 
 // Display selected time in a box and let user click to choose a time
 @Composable
-fun TimeBox(time: MutableState<String>, onClick: () -> Unit) {
+fun TimeInput(time: MutableState<String>, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .padding(2.dp)
@@ -471,158 +620,6 @@ fun TimeBox(time: MutableState<String>, onClick: () -> Unit) {
                 modifier = Modifier
                     .padding(start = 12.dp)
                     .fillMaxWidth()
-            )
-        }
-    }
-}
-
-// Top bar that displays "Food Intake Questionnaire" and a back button
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun TopNavBar(modifier: Modifier = Modifier) {
-    // For the back button press
-    val onBackPressedDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
-
-    // Controls the scrolling behavior of the TopNavBar
-    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
-
-    // Creating the top bar
-    CenterAlignedTopAppBar(
-        title = {
-            Text(
-                "Food Intake Questionnaire", // Title of app
-                maxLines = 1 // Only show one line of title
-            )
-        },
-        // Creates back button
-        navigationIcon = {
-            IconButton(onClick = {
-                onBackPressedDispatcher?.onBackPressed() // When clicked go back
-            }) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Localised description"
-                )
-            }
-        },
-        scrollBehavior = scrollBehavior, // Adds scroll behaviour to top bar
-        modifier = modifier
-    )
-}
-
-// Shows the persona buttons that users can click to find out more information
-@Composable
-fun PersonaSelectionButtons() {
-    val options = listOf( // List of persona options
-        "Health Devotee", "Mindful Eater", "Wellness Striver",
-        "Balance Seeker", "Health Procrastinator", "Food Carefree"
-    )
-
-    // Map for the persona descriptions, storing them in key value pairs
-    val optionDetails = mapOf(
-        "Health Devotee" to "I’m passionate about healthy eating & health plays a big part in my life. I use social media to follow active lifestyle personalities or get new recipes/exercise ideas. I may even buy superfoods or follow a particular type of diet. I like to think I am super healthy.",
-        "Mindful Eater" to "I’m health-conscious and being healthy and eating healthy is important to me. Although health means different things to different people, I make conscious lifestyle decisions about eating based on what I believe healthy means. I look for new recipes and healthy eating information on social media.",
-        "Wellness Striver" to "I aspire to be healthy (but struggle sometimes). Healthy eating is hard work! I’ve tried to improve my diet, but always find things that make it difficult to stick with the changes. Sometimes I notice recipe ideas or healthy eating hacks, and if it seems easy enough, I’ll give it a go.",
-        "Balance Seeker" to "I try and live a balanced lifestyle, and I think that all foods are okay in moderation. I shouldn’t have to feel guilty about eating a piece of cake now and again. I get all sorts of inspiration from social media like finding out about new restaurants, fun recipes and sometimes healthy eating tips.",
-        "Health Procrastinator" to "I’m contemplating healthy eating but it’s not a priority for me right now. I know the basics about what it means to be healthy, but it doesn’t seem relevant to me right now. I have taken a few steps to be healthier but I am not motivated to make it a high priority because I have too many other things going on in my life.",
-        "Food Carefree" to "I’m not bothered about healthy eating. I don’t really see the point and I don’t think about it. I don’t really notice healthy eating tips or recipes and I don’t care what I eat."
-    )
-
-    // Map for the persona pictures
-    val optionImages = mapOf(
-        "Health Devotee" to R.drawable.healthdevotee,
-        "Mindful Eater" to R.drawable.mindfuleater,
-        "Wellness Striver" to R.drawable.wellnessstriver,
-        "Balance Seeker" to R.drawable.balanceseeker,
-        "Health Procrastinator" to R.drawable.healthprocrastinator,
-        "Food Carefree" to R.drawable.foodcarefree
-    )
-
-    // Checks the selected persona and whether to show the pop up
-    var selectedOption by remember { mutableStateOf("") }
-    var showDialog by remember { mutableStateOf(false) }
-
-    // Arranging the persona buttons
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(1.dp)
-    ){
-
-        // Row 1 for the first three persona buttons
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(1.dp)
-        ){
-            options.take(3).forEach { option ->
-                Button(
-                    onClick = {
-                        selectedOption = option
-                        showDialog = true // Show dialog with details of the selected option
-                    },
-                    modifier = Modifier.padding(2.dp), // Padding around button
-                    contentPadding = PaddingValues(9.dp)
-                ){
-                    Text( // Text displayed for each persona
-                        option,
-                        textAlign = TextAlign.Center,
-                        fontSize = 14.sp
-                    )
-                }
-            }
-        }
-
-        // Row to display next three persona buttons
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(1.dp)
-        ){
-            options.drop(3).forEach { option ->
-                Button(
-                    onClick = {
-                        selectedOption = option // Set selected option when clicked
-                        showDialog = true // Show dialog with details of selected option
-                    },
-                    modifier = Modifier.padding(2.dp), // Padding around the button
-                    contentPadding = PaddingValues(8.dp)
-                ){
-                    Text( // Text displayed for each persona
-                        option, textAlign = TextAlign.Center,
-                        fontSize = 14.sp
-                    )
-                }
-            }
-        }
-
-        // If the dialog should be displayed, then display it with the pop up
-        if (showDialog) {
-            AlertDialog(
-                onDismissRequest = { showDialog = false }, // If user taps outside then dismiss the dialog
-                text = {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        optionImages[selectedOption]?.let { imageRes ->
-                            Image(
-                                painter = painterResource(id = imageRes),
-                                contentDescription = "$selectedOption Image", // Show image of selected persona
-                                modifier = Modifier.size(140.dp)
-                            )
-                        }
-                        Text(
-                            text = selectedOption, // Shows persona title
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 25.sp,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(8.dp)
-                        )
-                        Text(
-                            text = optionDetails[selectedOption] ?: "No details available.", // Shows persona description
-                            fontSize = 14.sp,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(16.dp)
-                        )
-                        Button(onClick = { showDialog = false }) {  // Button to close the dialog
-                            Text("Dismiss")
-                        }
-                    }
-                },
-                confirmButton = {}
             )
         }
     }
