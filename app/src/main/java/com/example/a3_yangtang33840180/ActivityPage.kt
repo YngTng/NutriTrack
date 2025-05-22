@@ -178,7 +178,7 @@ fun HomePage() {
             verticalAlignment = Alignment.CenterVertically
         ){
             Text(
-                text = "You've already filled in your Food\nIntake Questionnaire, but you can\nchange details here:",
+                text = "You've already filled in your Food Intake Questionnaire, but you can change details here:",
                 style = androidx.compose.ui.text.TextStyle(fontSize = 15.sp),
                 modifier = Modifier.weight(1f)
             )

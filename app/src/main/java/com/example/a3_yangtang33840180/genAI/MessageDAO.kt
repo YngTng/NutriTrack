@@ -22,9 +22,6 @@ interface MessageDAO {
     @Query("DELETE FROM messages")
     suspend fun deleteAllMessages()
 
-    @Query("DELETE FROM messages WHERE id = :messageId")
-    suspend fun deleteMessageById(messageId: Int)
-
     @Query("SELECT * FROM messages ORDER BY id ASC")
     fun getAllMessages(): Flow<List<Message>>
 }

@@ -18,14 +18,6 @@ class MessageRepository {
         messageDAO.updateMessage(message)
     }
 
-    suspend fun deleteMessage(message: Message) {
-        messageDAO.deleteMessage(message)
-    }
-
-    suspend fun deleteMessageById(messageId: Int) {
-        messageDAO.deleteMessageById(messageId)
-    }
-
     suspend fun deleteAllMessages() {
         messageDAO.deleteAllMessages()
     }
