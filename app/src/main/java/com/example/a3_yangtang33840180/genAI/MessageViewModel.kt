@@ -19,9 +19,6 @@ class MessageViewModel(context: Context): ViewModel() {
         messageRepository.updateMessage(message)
     }
 
-    fun deleteMessage(message: Message) = viewModelScope.launch {
-        messageRepository.deleteMessage(message)
-    }
 
     fun deleteMessageById(messageId: Int) = viewModelScope.launch {
         messageRepository.deleteMessageById(messageId)

@@ -1,42 +1,47 @@
 package com.example.a3_yangtang33840180
 
-import android.content.Context
-import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
+import androidx.activity.enableEdgeToEdge
+import android.content.Context
+import android.content.Intent
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.filled.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.*
-import android.util.Log
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.*
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.outlined.Phone
-import androidx.compose.material.icons.outlined.Search
-import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.a3_yangtang33840180.fruityVice.FruitViewModel
-import com.example.a3_yangtang33840180.genAI.GenAIScreen
-
+import com.example.a3_yangtang33840180.genAI.GenAIViewModel
+import com.example.a3_yangtang33840180.genAI.UiState
+import com.example.a3_yangtang33840180.genAI.Message
+import com.example.a3_yangtang33840180.genAI.MessageViewModel
 import com.example.a3_yangtang33840180.ui.theme.A3_YangTang33840180Theme
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -135,13 +140,13 @@ fun HomePage() {
     val context = LocalContext.current
     val sharedPreferences = context.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
 
-    // Need to retrieve values from sharedPreferences to display user Id and need currentUserGender to retrieve the corresponding gender score
-    val currentUserID = sharedPreferences.getString("currentUserID", "Unknown") ?: "Unknown"
-    val currentUserGender = sharedPreferences.getString("Sex_${currentUserID}", "Unknown") ?: "Unknown"
-    val currentUserScore = sharedPreferences.getFloat("HEIFApossibleScoreTotalscore_${currentUserID}_$currentUserGender", 0f)
+    // Need to retrieve values from sharedPreferences to display user Id and need userGender to retrieve the corresponding gender score
+    val currentUserId = sharedPreferences.getString("userId", "Unknown") ?: "Unknown"
+    val currentUserGender = sharedPreferences.getString("Sex_${currentUserId}", "Unknown") ?: "Unknown"
+    val userTotalScore = sharedPreferences.getFloat("HEIFAtotalscore_${currentUserId}_$currentUserGender", 0f)
 
     // Check if values have been correctly retrieved
-    Log.d("DEBUG", "User ID: $currentUserID, Gender: $currentUserGender, Total Score: $currentUserScore")
+    Log.d("DEBUG", "User ID: $currentUserId, Gender: $currentUserGender, Total Score: $userTotalScore")
 
     Column(
         modifier = Modifier
@@ -159,7 +164,7 @@ fun HomePage() {
             modifier = Modifier.padding(bottom = 8.dp)
         )
         Text(
-            text = "User $currentUserID",
+            text = "User $currentUserId",
             fontSize = 40.sp,
             fontWeight = FontWeight.Bold
         )
@@ -237,7 +242,7 @@ fun HomePage() {
                 contentAlignment = Alignment.CenterEnd
             ){
                 Text(
-                    text = "$currentUserScore / 100", // Displays their total score based on their user id and gender out of 100
+                    text = "$userTotalScore / 100", // Displays their total score based on their user id and gender out of 100
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.Green
@@ -274,19 +279,19 @@ fun HomePage() {
 // Function for the Insights page to display the progress bars
 @Composable
 fun InsightsPage(navController: NavHostController, selectedItemState: MutableState<Int> = remember { mutableIntStateOf(0) }) {
-    // Retrieve the currentUserID and currentUserGender
+    // Retrieve the userId and userGender
     val context = LocalContext.current
     val sharedPreferences = context.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
-    val currentUserID = sharedPreferences.getString("currentUserID", "Unknown") ?: "Unknown"
-    val currentUserGender = sharedPreferences.getString("Sex_$currentUserID", "Unknown") ?: "Unknown"
+    val currentUserId = sharedPreferences.getString("userId", "Unknown") ?: "Unknown"
+    val currentUserGender = sharedPreferences.getString("Sex_$currentUserId", "Unknown") ?: "Unknown"
 
-    Log.d("DEBUG", "Slider User ID: $currentUserID, Gender: $currentUserGender") // Check if the correct values have been retrieved
+    Log.d("DEBUG", "Slider User ID: $currentUserId, Gender: $currentUserGender") // Check if the correct values have been retrieved
 
     val columnHeaders = listOf("Discretionary", "Vegetables", "Fruit", "Grains/Cereals", "Wholegrains", "Meat", "Dairy", "Sodium", "Alcohol", "Water", "Sugar", "Saturated fat", "Unsaturated fat")
     val possibleScoreTotals = listOf("10.0", "10.0", "10.0", "5.0", "5.0", "10.0", "10.0", "10.0", "5.0", "5.0", "10.0", "5.0", "5.0")
 
     val (filteredColumns, userValues) = remember {
-        genderFilteredColumns(context, currentUserID, currentUserGender)  // Lists column names based on the user gender
+        genderFilteredColumns(context, currentUserId, currentUserGender)  // Lists column names based on the user gender
     }
 
     Column( // Having a column to put all the UI elements inside
@@ -351,7 +356,7 @@ fun InsightsPage(navController: NavHostController, selectedItemState: MutableSta
                 )
             }
         }
-        TotalValues(context, currentUserID, currentUserGender) // Display total values for each stat
+        TotalValues(context, currentUserId, currentUserGender) // Display total values for each stat
 
         Column(
             modifier = Modifier
@@ -383,15 +388,16 @@ fun InsightsPage(navController: NavHostController, selectedItemState: MutableSta
 // Function for the NutriCoach page to be implemented in the future
 @Composable
 fun NutricoachPage() {
+    val context = LocalContext.current
+    val messageViewModel: MessageViewModel = viewModel(
+        factory = MessageViewModel.MessageViewModelFactory(context)
+    )
+
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
     ){
-        Text(
-            text = "NutriCoach",
-            fontSize = 25.sp,
-            fontWeight = FontWeight.Bold
-        )
+        Text("NutriCoach", fontSize = 25.sp, fontWeight = FontWeight.Bold)
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -400,19 +406,15 @@ fun NutricoachPage() {
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
         ){
-            //#TODO Add NutriCoach page content
             SearchFruits()
 
-
             HorizontalDivider(
-                modifier = Modifier
-                    .padding(vertical = 18.dp),
-                thickness = 3.dp,        // Thin colour
-                color = Color.LightGray  // Light colour
+                modifier = Modifier.padding(vertical = 18.dp),
+                thickness = 3.dp,
+                color = Color.LightGray
             )
 
-            //#TODO Add NutriCoach page content
-            GenAIScreen()
+            GenAIScreen(messageViewModel = messageViewModel)
         }
     }
 }
@@ -641,8 +643,8 @@ fun ClinicianDashboardPage(navController: NavHostController) {
     }
 }
 
-// Function to get the column information based on the currentUserGender
-fun genderFilteredColumns(context: Context, currentUserID: String, currentUserGender: String): Pair<List<String>, List<String>> {
+// Function to get the column information based on the userGender
+fun genderFilteredColumns(context: Context, userId: String, userGender: String): Pair<List<String>, List<String>> {
     val filteredColumns = mutableListOf<String>()
     val userValues = mutableListOf<String>()
 
@@ -656,12 +658,12 @@ fun genderFilteredColumns(context: Context, currentUserID: String, currentUserGe
 
             // Find gender-specific columns
             tableHeaders.forEachIndexed { index, column ->
-                if (currentUserGender.equals("Female", ignoreCase = false) && column.endsWith("Female", ignoreCase = false)) { // Ignore case false to check for upper and lower case
+                if (userGender.equals("Female", ignoreCase = false) && column.endsWith("Female", ignoreCase = false)) { // Ignore case false to check for upper and lower case
                     if (index != 4) { // Ignore the HEIFApossibleScoreTotalscoreFemale but append all the other columns that end with "Female"
                         filteredColumns.add(column) // Stored column names
                         relevantIndices.add(index) // Stored column indices
                     }
-                } else if (currentUserGender.equals("Male", ignoreCase = false) && column.endsWith("Male", ignoreCase = false)) {
+                } else if (userGender.equals("Male", ignoreCase = false) && column.endsWith("Male", ignoreCase = false)) {
                     if (index != 3) { // Ignore the HEIFApossibleScoreTotalscoreMale but append all the other columns that end with "Male"
                         filteredColumns.add(column)
                         relevantIndices.add(index)
@@ -669,26 +671,26 @@ fun genderFilteredColumns(context: Context, currentUserID: String, currentUserGe
                 }
             }
 
-            // Find the corresponding row for the currentUserID
-            val currentUserRow = lines.drop(1).find { line ->
+            // Find the corresponding row for the userId
+            val userRow = lines.drop(1).find { line ->
                 val currentUserData = line.split(",").map { it.trim() }
-                currentUserData.size > 1 && currentUserData[1] == currentUserID  // Check the second column for the currentUserID
+                currentUserData.size > 1 && currentUserData[1] == userId  // Check the second column for the userId
             }?.split(",") ?: emptyList()
 
-            Log.d("CSVProcessor", "User Row: $currentUserRow") // Check if the correct row is being retrieved for the user
+            Log.d("CSVProcessor", "User Row: $userRow") // Check if the correct row is being retrieved for the user
 
-            if (currentUserRow.isNotEmpty()) { // Find relevant values for each column based on the gender
+            if (userRow.isNotEmpty()) { // Find relevant values for each column based on the gender
                 relevantIndices.forEach { index ->
-                    if (!(currentUserGender.equals("male", ignoreCase = true) && index == 3) &&
-                        !(currentUserGender.equals("female", ignoreCase = true) && index == 4)) {
+                    if (!(userGender.equals("male", ignoreCase = true) && index == 3) &&
+                        !(userGender.equals("female", ignoreCase = true) && index == 4)) {
                         userValues.add(
-                            currentUserRow.getOrNull(index)?.trim() ?: "0"
+                            userRow.getOrNull(index)?.trim() ?: "0"
                         )
                     }
                 }
 
             } else {
-                Log.e("CSVProcessor", "User row not found for currentUserID: $currentUserID")
+                Log.e("CSVProcessor", "User row not found for userId: $userId")
             }
 
             Log.d("CSVProcessor", "Filtered Columns: $filteredColumns") // Column names based on user gender
@@ -703,7 +705,7 @@ fun genderFilteredColumns(context: Context, currentUserID: String, currentUserGe
 
 // Function to show HEIFAtotalvaluegender
 @Composable
-fun TotalValues(context: Context, currentUserID: String, currentUserGender: String) {
+fun TotalValues(context: Context, userId: String, userGender: String) {
     var genderedScore by remember { mutableStateOf(0f) }
 
     try { // Open the CSV file from assets, try block to handle potential errors
@@ -716,31 +718,31 @@ fun TotalValues(context: Context, currentUserID: String, currentUserGender: Stri
             val tableHeaders = lines.first().split(",").map { it.trim() } // Get tableHeaders from the first row
             Log.d("CSVProcessor", "Headers: $tableHeaders") // Check if tableHeaders are retrieved
 
-            // Find the currentUserID row
-            val currentUserRow = lines.drop(1).find { line ->
+            // Find the userId row
+            val userRow = lines.drop(1).find { line ->
                 val currentUserData = line.split(",").map { it.trim() }
-                currentUserData.size > 1 && currentUserData[1] == currentUserID // Check if currentUserID is in the second column
+                currentUserData.size > 1 && currentUserData[1] == userId // Check if userId is in the second column
             }?.split(",") ?: emptyList() // If user row found then remove its commas otherwise return an empty list
 
-            Log.d("CSVProcessor", "User Row: $currentUserRow")  // Check if rows are retrieved
+            Log.d("CSVProcessor", "User Row: $userRow")  // Check if rows are retrieved
 
             // Find the column index based on gender
-            if (currentUserRow.isNotEmpty()) {
+            if (userRow.isNotEmpty()) {
                 var genderedScoreString: String? = null // Initialise variable to store gender value
 
-                if (currentUserGender.equals("Male", ignoreCase = true)) { // Access the 4th column if Male
-                    genderedScoreString = currentUserRow.getOrNull(3)?.trim()
+                if (userGender.equals("Male", ignoreCase = true)) { // Access the 4th column if Male
+                    genderedScoreString = userRow.getOrNull(3)?.trim()
                 }
-                else if (currentUserGender.equals("Female", ignoreCase = true)) { // Access the 5th column if Male
+                else if (userGender.equals("Female", ignoreCase = true)) { // Access the 5th column if Male
                     genderedScoreString =
-                        currentUserRow.getOrNull(4)?.trim() // 5th column for female
+                        userRow.getOrNull(4)?.trim() // 5th column for female
                 }
 
-                Log.d("CSVProcessor", "Gender-specific value string for $currentUserGender: $genderedScoreString") // Check the HEIFA gender total value retrieved
+                Log.d("CSVProcessor", "Gender-specific value string for $userGender: $genderedScoreString") // Check the HEIFA gender total value retrieved
 
                 genderedScore = genderedScoreString?.toFloatOrNull() ?: 0f // Convert string to float
             } else {
-                Log.e("CSVProcessor", "User row not found for currentUserID: $currentUserID")
+                Log.e("CSVProcessor", "User row not found for userId: $userId")
             }
         }
         reader.close() // Close the reader
@@ -922,6 +924,207 @@ fun SearchFruits(viewModel: FruitViewModel = viewModel()) {
                 text = "Sugar: ${it.nutritions.sugar}",
                 fontWeight = FontWeight.Bold
             )
+        }
+    }
+}
+
+@Composable
+fun GenAIScreen(
+    genAiViewModel: GenAIViewModel = viewModel(),
+    messageViewModel: MessageViewModel
+) {
+    val placeholderResult = stringResource(R.string.results_placeholder)
+    val uiState by genAiViewModel.uiState.collectAsState()
+    val scrollState = rememberScrollState()
+    var result by rememberSaveable { mutableStateOf(placeholderResult) }
+
+    val generatedMsg = (uiState as? UiState.Success)?.outputText
+
+    //Save message to MessageDatabase
+    LaunchedEffect(generatedMsg) {
+        generatedMsg?.let {
+            messageViewModel.insertMessage(Message(theMessage = it))
+            result = it
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(scrollState)
+            .padding(16.dp)
+    ) {
+        Button(onClick = {
+            genAiViewModel.sendPrompt("Generate a short encouraging message to help someone improve their fruit intake.")
+        }) {
+            Icon(
+                painter = painterResource(id = R.drawable.message),
+                contentDescription = "AI Message",
+                modifier = Modifier.size(25.dp)
+            )
+            Spacer(modifier = Modifier.width(10.dp))
+            Text("Motivational Message (AI)")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        when (uiState) {
+            is UiState.Loading -> {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+            }
+
+            is UiState.Error -> {
+                val error = (uiState as UiState.Error).errorMessage
+                result = error
+                Text(
+                    text = error,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(8.dp)
+                )
+            }
+
+            is UiState.Success -> {
+                Text(
+                    text = result,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(8.dp)
+                )
+            }
+
+            else -> {
+                Text(
+                    text = placeholderResult,
+                    modifier = Modifier.padding(8.dp)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        ShowAllMessages()
+    }
+}
+
+@Composable
+fun ShowAllMessages() {
+    val context = LocalContext.current
+    val messageViewModel: MessageViewModel = viewModel(
+        factory = MessageViewModel.MessageViewModelFactory(context)
+    )
+    var showDialog by remember { mutableStateOf(false) }
+
+    Button(onClick = { showDialog = true }) {
+        Icon(
+            painter = painterResource(id = R.drawable.message),
+            contentDescription = "Messages",
+            modifier = Modifier.size(25.dp)
+        )
+        Spacer(modifier = Modifier.width(15.dp))
+        Text("Show All Messages")
+    }
+
+    if (showDialog) {
+        Dialog(onDismissRequest = { showDialog = false }) {
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                tonalElevation = 8.dp,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.9f)
+                    .padding(5.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp)
+                ) {
+                    Text(
+                        text = "All Messages",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = MaterialTheme.typography.titleLarge.fontSize
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    AddMessageDialogContent(
+                        viewModel = messageViewModel,
+                        onCloseDialog = { showDialog = false } // Pass close action here
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AddMessageDialogContent(viewModel: MessageViewModel, onCloseDialog: () -> Unit) {
+    val listOfMessages by viewModel.allMessages.collectAsState(initial = emptyList())
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f) // Fill remaining space
+        ) {
+            items(listOfMessages) { message ->
+                MessageCard(
+                    message = message
+                )
+            }
+        }
+
+        Divider(thickness = 3.dp, color = Color.DarkGray, modifier = Modifier.padding(vertical = 18.dp))
+
+        ActionButtons(
+            onDeleteAll = {
+                viewModel.deleteAllMessages()
+            },
+            onCloseDialog = onCloseDialog
+        )
+    }
+}
+
+@Composable
+fun ActionButtons(onDeleteAll: () -> Unit, onCloseDialog: () -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(20.dp),
+        modifier = Modifier.fillMaxWidth()) {
+        Box {
+            Button(
+                modifier = Modifier.sizeIn(minWidth = 20.dp, minHeight = 20.dp),
+                onClick = onDeleteAll,
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+            ) {
+                Text("Delete All Messages")
+            }
+        }
+
+        Box {
+            Button(
+                modifier = Modifier.sizeIn(minWidth = 50.dp, minHeight = 20.dp),
+                onClick = onCloseDialog
+            ){
+                Text("Done")
+            }
+        }
+    }
+}
+
+@Composable
+fun MessageCard(message: Message) {
+    Card(
+        modifier = Modifier
+            .padding(start = 1.dp, end = 1.dp, top = 4.dp, bottom = 4.dp)
+            .height(150.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp))
+    {
+        Column(
+            modifier = Modifier
+                .padding(8.dp)
+                .weight(1f),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ){
+            Text(text = message.theMessage)
         }
     }
 }
