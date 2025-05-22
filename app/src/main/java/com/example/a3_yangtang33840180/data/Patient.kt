@@ -1,13 +1,17 @@
 package com.example.a3_yangtang33840180.data
 
+import androidx.room.Entity
 import androidx.room.PrimaryKey
 
+@Entity(tableName = "patients")
 class Patient (
     //includes UserID, PhoneNumber, Name, Sex, and all scores
     @PrimaryKey
     val userId: Int,
-    val phoneNumber: Long,
+
     val name: String,
+    val phoneNumber: Long,
+    val passWord: String,
     val sex: String,
     val heifaTotalScoreMale: Double,
     val heifaTotalScoreFemale: Double,
@@ -68,5 +72,6 @@ class Patient (
     val saturatedFat: Double,
     val unsaturatedFatHeifaScoreMale: Double,
     val unsaturatedFatHeifaScoreFemale: Double,
-    val unsaturatedFatServeSize: Double
+    val unsaturatedFatServeSize: Double,
+    //val foodIntake: FoodIntake
 )
