@@ -7,8 +7,8 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
-class PatientViewModel(context: Context): ViewModel() {
-    private val patientRepository: PatientRepository = PatientRepository(context)
+class PatientViewModel(context: Context) : ViewModel() {
+    private val patientRepository: PatientRepository = PatientRepository(context, viewModelScope)
     val allPatients: Flow<List<Patient>> = patientRepository.getAllPatients()
 
     fun insertPatient(patient: Patient) = viewModelScope.launch {
@@ -31,10 +31,9 @@ class PatientViewModel(context: Context): ViewModel() {
         patientRepository.deleteAllPatients()
     }
 
-    class PatientViewModelFactory(context: Context) : ViewModelProvider.Factory {
-        private val context = context.applicationContext
-        override fun <T : ViewModel> create(modelClass: Class<T>): T =
-            PatientViewModel(context) as T
+    class PatientViewModelFactory(private val context: Context) : ViewModelProvider.Factory {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            return PatientViewModel(context.applicationContext) as T
+        }
     }
-
 }

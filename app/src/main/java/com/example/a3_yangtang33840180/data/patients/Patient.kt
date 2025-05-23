@@ -9,8 +9,8 @@ class Patient (
     @PrimaryKey
     val userId: Int,
 
-    val phoneNumber: Long,
     val name: String,
+    val phoneNumber: Long,
     val passWord: String,
     val sex: String,
     val heifaTotalScoreMale: Double,

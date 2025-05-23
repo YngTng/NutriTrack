@@ -8,10 +8,14 @@ import androidx.room.Query
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
+
 @Dao
 interface PatientDAO {
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPatient(patient: Patient)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertPatients(patients: List<Patient>)
 
     @Update
     suspend fun updatePatient(patient: Patient)
@@ -19,15 +23,12 @@ interface PatientDAO {
     @Delete
     suspend fun deletePatient(patient: Patient)
 
-    @Query("DELETE FROM patients")
-    suspend fun deleteAllPatients()
-
     @Query("DELETE FROM patients WHERE userId = :patientId")
     suspend fun deletePatientById(patientId: Int)
 
-    @Query("SELECT * FROM patients ORDER BY userId ASC")
-    fun getAllPatients(): Flow<List<Patient>>
+    @Query("DELETE FROM patients")
+    suspend fun deleteAllPatients()
 
-    @Insert(onConflict = OnConflictStrategy.Companion.REPLACE)
-    suspend fun insertAll(patients: List<Patient>)
+    @Query("SELECT * FROM patients")
+    fun getAllPatients(): Flow<List<Patient>>
 }

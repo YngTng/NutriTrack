@@ -15,12 +15,23 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
+import com.example.a3_yangtang33840180.data.patients.DatabaseModule
+import com.example.a3_yangtang33840180.data.patients.PatientDatabase
 import com.example.a3_yangtang33840180.ui.theme.A3_YangTang33840180Theme
 
 // Main activity that starts when app is opened
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        lifecycleScope.launch {
+            val patients = DatabaseModule.prepopulateDatabase(this@MainActivity)
+            val dao = PatientDatabase.getDatabase(applicationContext).patientDao()
+            dao.insertPatients(patients)
+        }
+
         enableEdgeToEdge() // Makes the app use the whole screen
         setContent {
             A3_YangTang33840180Theme {
