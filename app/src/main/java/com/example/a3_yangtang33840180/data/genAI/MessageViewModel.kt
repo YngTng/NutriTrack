@@ -1,4 +1,4 @@
-package com.example.a3_yangtang33840180.genAI
+package com.example.a3_yangtang33840180.data.genAI
 
 import android.content.Context
 import androidx.lifecycle.ViewModel

@@ -1,4 +1,4 @@
-package com.example.a3_yangtang33840180.data
+package com.example.a3_yangtang33840180.data.patients
 
 import androidx.room.Dao
 import androidx.room.Delete
@@ -28,6 +28,6 @@ interface PatientDAO {
     @Query("SELECT * FROM patients ORDER BY userId ASC")
     fun getAllPatients(): Flow<List<Patient>>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.Companion.REPLACE)
     suspend fun insertAll(patients: List<Patient>)
 }

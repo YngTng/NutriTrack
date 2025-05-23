@@ -1,4 +1,4 @@
-package com.example.a3_yangtang33840180.data
+package com.example.a3_yangtang33840180.data.patients
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
@@ -9,8 +9,8 @@ class Patient (
     @PrimaryKey
     val userId: Int,
 
-    val name: String,
     val phoneNumber: Long,
+    val name: String,
     val passWord: String,
     val sex: String,
     val heifaTotalScoreMale: Double,

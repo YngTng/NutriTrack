@@ -1,4 +1,4 @@
-package com.example.a3_yangtang33840180.data
+package com.example.a3_yangtang33840180.data.patients
 
 import android.content.Context
 import kotlinx.coroutines.flow.Flow

@@ -37,11 +37,11 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.*
-import com.example.a3_yangtang33840180.fruityVice.FruitViewModel
-import com.example.a3_yangtang33840180.genAI.GenAIViewModel
-import com.example.a3_yangtang33840180.genAI.UiState
-import com.example.a3_yangtang33840180.genAI.Message
-import com.example.a3_yangtang33840180.genAI.MessageViewModel
+import com.example.a3_yangtang33840180.data.fruityVice.FruitViewModel
+import com.example.a3_yangtang33840180.data.genAI.GenAIViewModel
+import com.example.a3_yangtang33840180.data.genAI.UiState
+import com.example.a3_yangtang33840180.data.genAI.Message
+import com.example.a3_yangtang33840180.data.genAI.MessageViewModel
 import com.example.a3_yangtang33840180.ui.theme.A3_YangTang33840180Theme
 import java.io.BufferedReader
 import java.io.InputStreamReader

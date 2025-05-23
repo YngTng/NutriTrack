@@ -1,4 +1,4 @@
-package com.example.a3_yangtang33840180.genAI
+package com.example.a3_yangtang33840180.data.genAI
 
 /**
  * A sealed hierarchy describing the state of the text generation.

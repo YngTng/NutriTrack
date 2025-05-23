@@ -1,4 +1,4 @@
-package com.example.a3_yangtang33840180.fruityVice
+package com.example.a3_yangtang33840180.data.fruityVice
 
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory

@@ -1,5 +1,6 @@
-package com.example.a3_yangtang33840180.genAI
+package com.example.a3_yangtang33840180.data.genAI
 
+import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
@@ -12,7 +13,7 @@ abstract class MessageDatabase: RoomDatabase() {
         @Volatile
         private var Instance: MessageDatabase? = null
 
-        fun getDatabase(context: android.content.Context): MessageDatabase{
+        fun getDatabase(context: Context): MessageDatabase{
             return Instance ?: synchronized(this) {
                 Room.databaseBuilder(context, MessageDatabase::class.java, "message_database")
                     .build().also { Instance = it }
