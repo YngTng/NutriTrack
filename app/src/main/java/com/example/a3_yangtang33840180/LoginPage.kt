@@ -70,7 +70,7 @@ fun LoginUI(
             style = MaterialTheme.typography.headlineMedium
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(44.dp))
 
         OutlinedTextField(
             value = userIdInput,
@@ -91,11 +91,16 @@ fun LoginUI(
             modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(39.dp))
 
-        Text(text = "This app is only for pre-registered users. Please enter your ID and password or Register to claim your account on your first visit.")
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.CenterEnd
+        ){
+            Text(text = "This app is only for pre-registered users. Please enter your ID and password or Register to claim your account on your first visit.")
+        }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(39.dp))
 
         Button(
             onClick = {

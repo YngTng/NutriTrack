@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -24,6 +25,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -64,19 +66,20 @@ fun RegistrationScreen(
     var phoneNumberInput by remember { mutableStateOf("") }
     var nameInput by remember { mutableStateOf("") }
     var passwordInput by remember { mutableStateOf("") }
+    var comfirmPasswordInput by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(24.dp),
-        verticalArrangement = Arrangement.Center
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
             text = "Register",
             style = MaterialTheme.typography.headlineMedium
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(44.dp))
 
         OutlinedTextField(
             value = userIdInput,
@@ -117,7 +120,18 @@ fun RegistrationScreen(
             modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedTextField(
+            value = comfirmPasswordInput,
+            onValueChange = { comfirmPasswordInput = it },
+            label = { Text("Confirm Password") },
+            singleLine = true,
+            visualTransformation = PasswordVisualTransformation(),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(54.dp))
 
         Button(
             onClick = {
@@ -132,15 +146,30 @@ fun RegistrationScreen(
 
                     val existingPatient = repository.getPatientById(userId)
 
-                    if (existingPatient != null && existingPatient.phoneNumber == phoneNumber) {
-                        val updatedPatient = existingPatient.copy(
-                            name = nameInput,
-                            passWord = passwordInput
-                        )
-                        repository.updatePatient(updatedPatient)
+                    if (existingPatient != null) {
+                        // Check if patient already has a password (i.e., registered)
+                        if (!existingPatient.passWord.isNullOrBlank()) {
+                            Toast.makeText(context, "User account exists", Toast.LENGTH_SHORT).show()
+                            return@launch
+                        }
 
-                        Toast.makeText(context, "Registration successful", Toast.LENGTH_SHORT).show()
-                        context.startActivity(Intent(context, LoginPage::class.java))
+                        if (existingPatient.phoneNumber == phoneNumber) {
+                            val passwordMatch = passwordInput == comfirmPasswordInput
+                            if (passwordMatch) {
+                                val updatedPatient = existingPatient.copy(
+                                    name = nameInput,
+                                    passWord = passwordInput
+                                )
+                                repository.updatePatient(updatedPatient)
+
+                                Toast.makeText(context, "Registration successful", Toast.LENGTH_SHORT).show()
+                                context.startActivity(Intent(context, LoginPage::class.java))
+                            } else {
+                                Toast.makeText(context, "Password does not match", Toast.LENGTH_SHORT).show()
+                            }
+                        } else {
+                            Toast.makeText(context, "User ID and phone number do not match", Toast.LENGTH_SHORT).show()
+                        }
                     } else {
                         Toast.makeText(context, "User ID and phone number do not match", Toast.LENGTH_SHORT).show()
                     }
@@ -149,6 +178,17 @@ fun RegistrationScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Register")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedButton(
+            onClick = {
+                context.startActivity(Intent(context, LoginPage::class.java))
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Back to Login")
         }
     }
 }

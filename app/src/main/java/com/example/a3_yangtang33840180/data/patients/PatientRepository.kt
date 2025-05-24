@@ -24,6 +24,12 @@ class PatientRepository(private val patientDao: PatientDAO) {
 
     fun getAllPatients(): Flow<List<Patient>> = patientDao.getAllPatients()
 
+    suspend fun getAverageHeifaScores(): Pair<Double, Double> {
+        val maleAvg = patientDao.getAverageTotalHeifaScoreMale() ?: 0.0
+        val femaleAvg = patientDao.getAverageTotalHeifaScoreFemale() ?: 0.0
+        return Pair(maleAvg, femaleAvg)
+    }
+
     companion object {
         @Volatile
         private var INSTANCE: PatientRepository? = null

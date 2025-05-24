@@ -22,9 +22,11 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -39,11 +41,12 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.*
+import coil3.compose.AsyncImage
 import com.example.a3_yangtang33840180.data.fruityVice.FruitViewModel
 import com.example.a3_yangtang33840180.data.genAI.GenAIViewModel
 import com.example.a3_yangtang33840180.data.genAI.UiState
-import com.example.a3_yangtang33840180.data.genAI.Message
-import com.example.a3_yangtang33840180.data.genAI.MessageViewModel
+import com.example.a3_yangtang33840180.data.genAI.NutriCoachTip
+import com.example.a3_yangtang33840180.data.genAI.NutriCoachTipViewModel
 import com.example.a3_yangtang33840180.data.patients.Patient
 import com.example.a3_yangtang33840180.data.patients.PatientDAO
 import com.example.a3_yangtang33840180.data.patients.PatientDatabase
@@ -99,11 +102,11 @@ fun MyNavHost(navController: NavHostController, selectedItemState: MutableState<
         }
         // Define the composable for the "insights" route
         composable("NutriCoach") {
-            NutricoachPage()
+            NutricoachPage(userId = userId)
         }
         // Define the composable for the "settings" route
         composable("Settings") {
-            SettingsPage(navController)
+            SettingsPage(navController = navController, userId = userId)
         }
         // Define the composable for the "clinician login" route
         composable("ClinicianLogin") {
@@ -147,7 +150,6 @@ fun BottomBar(navController: NavHostController, selectedItemState: MutableState<
         }
     }
 }
-
 
 @Composable
 fun HomePage(userId: Int) {
@@ -211,7 +213,7 @@ fun HomePage(userId: Int) {
                     context.startActivity(Intent(context, QuestionnairePage()::class.java))
                 },
                 modifier = Modifier
-                    .padding(horizontal = 30.dp, vertical = 8.dp)
+                    .padding(start = 25.dp)
                     .height(40.dp)
             ){
                 Icon(
@@ -371,38 +373,45 @@ fun InsightsPage(
             val inactiveTrack = colorResource(id = R.color.purple_200)
             val activeTrack = colorResource(id = R.color.purple_500)
 
+            LaunchedEffect(userValues.getOrNull(index)) {
+                progress = userValues.getOrNull(index) ?: 0.0
+            }
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 6.dp),
-                horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = column,
                     style = TextStyle(fontSize = 14.sp),
-                    modifier = Modifier.weight(1.5f),
+                    modifier = Modifier.weight(1f),
                     fontWeight = FontWeight.Bold
                 )
 
-                LaunchedEffect(userValues.getOrNull(index)) {
-                    progress = userValues.getOrNull(index) ?: 0.0
-                }
-
-                LinearProgressIndicator(
-                    progress = (progress / maxProgress).toFloat().coerceIn(0f, 1f),
+                Box(
                     modifier = Modifier
                         .weight(2f)
-                        .height(5.dp),
-                    color = activeTrack,
-                    trackColor = inactiveTrack
-                )
-
-                Spacer(modifier = Modifier.width(10.dp))
+                        .wrapContentHeight(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    LinearProgressIndicator(
+                        progress = { (progress / maxProgress).toFloat().coerceIn(0f, 1f) },
+                        modifier = Modifier
+                            .fillMaxWidth(0.85f)
+                            .height(5.dp),
+                        color = activeTrack,
+                        trackColor = inactiveTrack,
+                        strokeCap = StrokeCap.Round
+                    )
+                }
 
                 Box(
+                    modifier = Modifier
+                        .weight(1f),
                     contentAlignment = Alignment.CenterEnd
-                ){
+                ) {
                     Text(
                         text = "${"%.1f".format(progress)}/${maxProgress}",
                         style = TextStyle(fontSize = 15.sp)
@@ -445,11 +454,27 @@ fun InsightsPage(
 
 // Function for the NutriCoach page to be implemented in the future
 @Composable
-fun NutricoachPage() {
+fun NutricoachPage(userId: Int) {
     val context = LocalContext.current
-    val messageViewModel: MessageViewModel = viewModel(
-        factory = MessageViewModel.MessageViewModelFactory(context)
+    val nutriCoachTipViewModel: NutriCoachTipViewModel = viewModel(
+        factory = NutriCoachTipViewModel.NutriCoachTipViewModelFactory(context)
     )
+
+    val repository = PatientRepository.getInstance(context)
+    var patient by remember { mutableStateOf<Patient?>(null) }
+    LaunchedEffect(userId) {
+        patient = repository.getPatientById(userId)
+    }
+
+    var isMale = patient?.sex == "Male"
+    var fruitScore = 0.0
+
+    fruitScore = if (isMale == true) {
+        patient?.fruitHeifaScoreMale ?: 0.0
+    } else{
+        patient?.fruitHeifaScoreFemale ?: 0.0
+    }
+
 
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -463,8 +488,16 @@ fun NutricoachPage() {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ){
-            SearchFruits()
+            if (fruitScore >= 10.0) {
+                AsyncImage(
+                    model = "https://picsum.photos/1000/600", // stable image
+                    contentDescription = "Random Image"
+                )
+            } else {
+                SearchFruits()
+            }
 
             HorizontalDivider(
                 modifier = Modifier.padding(vertical = 18.dp),
@@ -472,16 +505,26 @@ fun NutricoachPage() {
                 color = Color.LightGray
             )
 
-            GenAIScreen(messageViewModel = messageViewModel)
+            InsightsGenAI(nutricoachtipViewModel = nutriCoachTipViewModel)
         }
     }
 }
 
 // Function for the Settings Page
 @Composable
-fun SettingsPage(navController: NavHostController) {
-
+fun SettingsPage(userId: Int, navController: NavHostController) {
     val context = LocalContext.current
+    val repository = PatientRepository.getInstance(context)
+
+    var patient by remember { mutableStateOf<Patient?>(null) }
+
+    LaunchedEffect(userId) {
+        patient = repository.getPatientById(userId)
+    }
+
+    val name = patient?.name ?: "Unknown"
+    val number = patient?.phoneNumber.toString()
+    val userId = patient?.userId.toString()
 
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -513,11 +556,25 @@ fun SettingsPage(navController: NavHostController) {
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ){
+                Icon(Icons.Default.Person, contentDescription = "Patient")
+
+                Spacer(modifier = Modifier.width(26.dp)) // Add space between content
+
+                Text(text = name, fontWeight = FontWeight.Bold)
+
+            }
+
+            Spacer(modifier = Modifier.height(15.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ){
                 Icon(Icons.Outlined.Phone, contentDescription = "Phone")
 
-                Spacer(modifier = Modifier.width(15.dp)) // Add space between content
+                Spacer(modifier = Modifier.width(26.dp)) // Add space between content
 
-                //#TODO Add Settings page content
+                Text(text = number, fontWeight = FontWeight.Bold)
 
             }
 
@@ -533,22 +590,9 @@ fun SettingsPage(navController: NavHostController) {
                     modifier = Modifier.size(25.dp)
                 )
 
-                Spacer(modifier = Modifier.width(15.dp)) // Add space between content
+                Spacer(modifier = Modifier.width(26.dp)) // Add space between content
 
-                //#TODO Add Settings page content
-            }
-
-            Spacer(modifier = Modifier.height(15.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ){
-                Icon(Icons.Default.Person, contentDescription = "Log In")
-
-                Spacer(modifier = Modifier.width(15.dp)) // Add space between content
-
-                //#TODO Add Settings page content
+                Text(text = userId, fontWeight = FontWeight.Bold)
             }
 
 
@@ -668,6 +712,18 @@ fun ClinicianLoginPage(navController: NavHostController) {
 
 @Composable
 fun ClinicianDashboardPage(navController: NavHostController) {
+    val context = LocalContext.current
+    val repository = PatientRepository.getInstance(context)
+
+    var maleAvg by remember { mutableDoubleStateOf(0.0) }
+    var femaleAvg by remember { mutableDoubleStateOf(0.0) }
+
+    LaunchedEffect(Unit) {
+        val (male, female) = repository.getAverageHeifaScores()
+        maleAvg = male
+        femaleAvg = female
+    }
+
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -687,6 +743,61 @@ fun ClinicianDashboardPage(navController: NavHostController) {
         ){
             //#TODO Create Dashboard
 
+            //Two rows containing average HEIFA Scores
+            OutlinedCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                colors = CardDefaults.outlinedCardColors()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Average Male HEIFA Score:")
+                    Text("%.2f".format(maleAvg))
+                }
+            }
+
+            Spacer(modifier = Modifier.height(3.dp))
+
+            OutlinedCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                colors = CardDefaults.outlinedCardColors()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Average Female HEIFA Score:")
+                    Text("%.2f".format(femaleAvg))
+                }
+            }
+
+            //Horizontal Divider
+            HorizontalDivider(thickness = 3.dp, color = Color.LightGray, modifier = Modifier.padding(vertical = 18.dp))
+
+            //Find data pattern button
+//            ClinicianGenAI(nutricoachtipViewModel = NutriCoachTipViewModel)
+
+            Button(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = {
+                    navController.navigate("DataPattern")
+                }
+            ){
+                Text("Find Data Pattern")
+            }
+
+
+            //display the 3 data patterns
+
             //Clinician Logout button
             Button(
                 modifier = Modifier.fillMaxWidth(),
@@ -697,6 +808,83 @@ fun ClinicianDashboardPage(navController: NavHostController) {
                 Text("Done")
             }
         }
+    }
+}
+
+@Composable
+fun ClinicianGenAI(
+    genAiViewModel: GenAIViewModel = viewModel(),
+    nutricoachtipViewModel: NutriCoachTipViewModel
+) {
+    val placeholderResult = stringResource(R.string.results_placeholder)
+    val uiState by genAiViewModel.uiState.collectAsState()
+    val scrollState = rememberScrollState()
+    var result by rememberSaveable { mutableStateOf(placeholderResult) }
+
+    val generatedMsg = (uiState as? UiState.Success)?.outputText
+
+    //Save message to MessageDatabase
+    LaunchedEffect(generatedMsg) {
+        generatedMsg?.let {
+            nutricoachtipViewModel.insertNutriCoachTip(NutriCoachTip(theNutriCoachTip = it))
+            result = it
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(scrollState)
+            .padding(16.dp)
+    ) {
+        Button(onClick = {
+            genAiViewModel.sendPrompt("Generate 3 interesting patterns in the data")
+        }) {
+            Icon(
+                painter = painterResource(id = R.drawable.message),
+                contentDescription = "AI Message",
+                modifier = Modifier.size(25.dp)
+            )
+            Spacer(modifier = Modifier.width(10.dp))
+            Text("Motivational Message (AI)")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        when (uiState) {
+            is UiState.Loading -> {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+            }
+
+            is UiState.Error -> {
+                val error = (uiState as UiState.Error).errorMessage
+                result = error
+                Text(
+                    text = error,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(8.dp)
+                )
+            }
+
+            is UiState.Success -> {
+                Text(
+                    text = result,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(8.dp)
+                )
+            }
+
+            else -> {
+                Text(
+                    text = placeholderResult,
+                    modifier = Modifier.padding(8.dp)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        ShowAllMessages()
     }
 }
 
@@ -720,19 +908,21 @@ fun TotalValues(patient: Patient, isMale: Boolean) {
 
         Row(
             modifier = Modifier.padding(1.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
         ) {
             LaunchedEffect(genderedScore) {
                 progress = genderedScore.toFloat()
             }
 
             LinearProgressIndicator(
-                progress = (progress / 100f).coerceIn(0f, 1f),
-                modifier = Modifier
-                    .weight(5f)
-                    .height(6.dp),
-                color = activeTrack,
-                trackColor = inactiveTrack
+            progress = { (progress / 100f).coerceIn(0f, 1f) },
+            modifier = Modifier
+                .weight(5f)
+                .height(6.dp),
+            color = activeTrack,
+            trackColor = inactiveTrack,
+            strokeCap = StrokeCap.Round
             )
 
             Spacer(modifier = Modifier.width(10.dp))
@@ -776,7 +966,6 @@ fun TotalValues(patient: Patient, isMale: Boolean) {
         }
     }
 }
-
 
 @Composable
 fun SearchFruits(viewModel: FruitViewModel = viewModel()) {
@@ -878,9 +1067,9 @@ fun SearchFruits(viewModel: FruitViewModel = viewModel()) {
 }
 
 @Composable
-fun GenAIScreen(
+fun InsightsGenAI(
     genAiViewModel: GenAIViewModel = viewModel(),
-    messageViewModel: MessageViewModel
+    nutricoachtipViewModel: NutriCoachTipViewModel
 ) {
     val placeholderResult = stringResource(R.string.results_placeholder)
     val uiState by genAiViewModel.uiState.collectAsState()
@@ -892,7 +1081,7 @@ fun GenAIScreen(
     //Save message to MessageDatabase
     LaunchedEffect(generatedMsg) {
         generatedMsg?.let {
-            messageViewModel.insertMessage(Message(theMessage = it))
+            nutricoachtipViewModel.insertNutriCoachTip(NutriCoachTip(theNutriCoachTip = it))
             result = it
         }
     }
@@ -957,8 +1146,8 @@ fun GenAIScreen(
 @Composable
 fun ShowAllMessages() {
     val context = LocalContext.current
-    val messageViewModel: MessageViewModel = viewModel(
-        factory = MessageViewModel.MessageViewModelFactory(context)
+    val messageViewModel: NutriCoachTipViewModel = viewModel(
+        factory = NutriCoachTipViewModel.NutriCoachTipViewModelFactory(context)
     )
     var showDialog by remember { mutableStateOf(false) }
 
@@ -1006,8 +1195,8 @@ fun ShowAllMessages() {
 }
 
 @Composable
-fun AddMessageDialogContent(viewModel: MessageViewModel, onCloseDialog: () -> Unit) {
-    val listOfMessages by viewModel.allMessages.collectAsState(initial = emptyList())
+fun AddMessageDialogContent(viewModel: NutriCoachTipViewModel, onCloseDialog: () -> Unit) {
+    val listOfNutriCoachTips by viewModel.allNutriCoachTips.collectAsState(initial = emptyList())
 
     Column(modifier = Modifier.fillMaxWidth()) {
         LazyColumn(
@@ -1015,9 +1204,9 @@ fun AddMessageDialogContent(viewModel: MessageViewModel, onCloseDialog: () -> Un
                 .fillMaxWidth()
                 .weight(1f) // Fill remaining space
         ) {
-            items(listOfMessages) { message ->
+            items(listOfNutriCoachTips) { nutricoachtip ->
                 MessageCard(
-                    message = message
+                    nutricoachtip = nutricoachtip
                 )
             }
         }
@@ -1026,7 +1215,7 @@ fun AddMessageDialogContent(viewModel: MessageViewModel, onCloseDialog: () -> Un
 
         ActionButtons(
             onDeleteAll = {
-                viewModel.deleteAllMessages()
+                viewModel.deleteAllNutriCoachTips()
             },
             onCloseDialog = onCloseDialog
         )
@@ -1059,7 +1248,7 @@ fun ActionButtons(onDeleteAll: () -> Unit, onCloseDialog: () -> Unit) {
 }
 
 @Composable
-fun MessageCard(message: Message) {
+fun MessageCard(nutricoachtip: NutriCoachTip) {
     Card(
         modifier = Modifier
             .padding(start = 1.dp, end = 1.dp, top = 4.dp, bottom = 4.dp)
@@ -1073,7 +1262,7 @@ fun MessageCard(message: Message) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ){
-            Text(text = message.theMessage)
+            Text(text = nutricoachtip.theNutriCoachTip)
         }
     }
 }

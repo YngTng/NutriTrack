@@ -3,8 +3,8 @@ package com.example.a3_yangtang33840180.data.genAI
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "messages")
-class Message (
+@Entity(tableName = "nutricoachtips")
+class NutriCoachTip (
     /**
      * id
      * name
@@ -15,5 +15,5 @@ class Message (
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
 
-    val theMessage: String
+    val theNutriCoachTip: String
 )
