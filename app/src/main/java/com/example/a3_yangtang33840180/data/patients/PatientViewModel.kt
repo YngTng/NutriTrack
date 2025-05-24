@@ -22,18 +22,6 @@ class PatientViewModel(context: Context) : ViewModel() {
         patientRepository.updatePatient(patient)
     }
 
-    fun deletePatient(patient: Patient) = viewModelScope.launch {
-        patientRepository.deletePatient(patient)
-    }
-
-    fun deletePatientById(patientId: Int) = viewModelScope.launch {
-        patientRepository.deletePatientById(patientId)
-    }
-
-    fun deleteAllPatients() = viewModelScope.launch {
-        patientRepository.deleteAllPatients()
-    }
-
     class PatientViewModelFactory(private val context: Context) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             return PatientViewModel(context.applicationContext) as T

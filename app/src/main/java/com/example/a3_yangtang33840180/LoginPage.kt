@@ -62,7 +62,8 @@ fun LoginUI(
         modifier = Modifier
             .fillMaxSize()
             .padding(24.dp),
-        verticalArrangement = Arrangement.Center
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Top
     ) {
         Text(
             text = "Login",
@@ -92,6 +93,10 @@ fun LoginUI(
 
         Spacer(modifier = Modifier.height(24.dp))
 
+        Text(text = "This app is only for pre-registered users. Please enter your ID and password or Register to claim your account on your first visit.")
+
+        Spacer(modifier = Modifier.height(24.dp))
+
         Button(
             onClick = {
                 coroutineScope.launch {
@@ -103,7 +108,9 @@ fun LoginUI(
 
                     if (loginSuccessful) {
                         Toast.makeText(context, "Login successful", Toast.LENGTH_SHORT).show()
-                        context.startActivity(Intent(context, ActivityPage::class.java))
+                        val intent = Intent(context, QuestionnairePage::class.java)
+                        intent.putExtra("USER_ID", userIdInput.toInt())
+                        context.startActivity(intent)
                     } else {
                         Toast
                             .makeText(context, "Invalid ID or password", Toast.LENGTH_SHORT)

@@ -2,11 +2,10 @@ package com.example.a3_yangtang33840180
 
 import android.os.Bundle
 import android.util.Log
+import android.content.Intent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import android.content.Context
-import android.content.Intent
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.foundation.Image
@@ -18,6 +17,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -32,6 +33,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -42,9 +44,11 @@ import com.example.a3_yangtang33840180.data.genAI.GenAIViewModel
 import com.example.a3_yangtang33840180.data.genAI.UiState
 import com.example.a3_yangtang33840180.data.genAI.Message
 import com.example.a3_yangtang33840180.data.genAI.MessageViewModel
+import com.example.a3_yangtang33840180.data.patients.Patient
+import com.example.a3_yangtang33840180.data.patients.PatientDAO
+import com.example.a3_yangtang33840180.data.patients.PatientDatabase
+import com.example.a3_yangtang33840180.data.patients.PatientRepository
 import com.example.a3_yangtang33840180.ui.theme.A3_YangTang33840180Theme
-import java.io.BufferedReader
-import java.io.InputStreamReader
 
 class ActivityPage : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -53,7 +57,12 @@ class ActivityPage : ComponentActivity() {
         setContent {
             A3_YangTang33840180Theme {
                 val navController: NavHostController = rememberNavController() // Keeps track of current screen
-                val selectedItemState = remember { mutableStateOf(0) }
+                val selectedItemState = remember { mutableIntStateOf(0) }
+
+                val userId = intent.getIntExtra("USER_ID", -1)
+                val context = LocalContext.current
+                val db = remember { PatientDatabase.getDatabase(context) }
+                val patientDao = remember { db.patientDao() }
 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
@@ -62,7 +71,7 @@ class ActivityPage : ComponentActivity() {
                     }
                 ){ innerPadding -> // Makes sure the layout isn't hidden under bottom bar
                     Column(modifier = Modifier.padding(innerPadding)) {
-                        MyNavHost(navController, selectedItemState)
+                        MyNavHost(navController, selectedItemState, userId = userId, patientDao = patientDao)
                     }
                 }
             }
@@ -71,17 +80,22 @@ class ActivityPage : ComponentActivity() {
 }
 
 @Composable
-fun MyNavHost(navController: NavHostController, selectedItemState: MutableState<Int>) {
+fun MyNavHost(navController: NavHostController, selectedItemState: MutableState<Int>, userId: Int, patientDao: PatientDAO) {
     NavHost(
         navController = navController,
         startDestination = "Home"
     ){
         composable("Home") {
-            HomePage()
+            HomePage(userId = userId)
         }
         // Define the composable for the "insights" route
         composable("Insights") {
-            InsightsPage(navController, selectedItemState)
+            InsightsPage(
+                navController = navController,
+                selectedItemState = selectedItemState,
+                userId = userId,
+                patientDao = patientDao   // Pass DAO here
+            )
         }
         // Define the composable for the "insights" route
         composable("NutriCoach") {
@@ -134,19 +148,32 @@ fun BottomBar(navController: NavHostController, selectedItemState: MutableState<
     }
 }
 
-// Function for the Home page that displays the user food quality score
+
 @Composable
-fun HomePage() {
+fun HomePage(userId: Int) {
     val context = LocalContext.current
-    val sharedPreferences = context.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
+    val repository = PatientRepository.getInstance(context)
 
-    // Need to retrieve values from sharedPreferences to display user Id and need userGender to retrieve the corresponding gender score
-    val currentUserId = sharedPreferences.getString("userId", "Unknown") ?: "Unknown"
-    val currentUserGender = sharedPreferences.getString("Sex_${currentUserId}", "Unknown") ?: "Unknown"
-    val userTotalScore = sharedPreferences.getFloat("HEIFAtotalscore_${currentUserId}_$currentUserGender", 0f)
+    var patient by remember { mutableStateOf<Patient?>(null) }
 
-    // Check if values have been correctly retrieved
-    Log.d("DEBUG", "User ID: $currentUserId, Gender: $currentUserGender, Total Score: $userTotalScore")
+    LaunchedEffect(userId) {
+        patient = repository.getPatientById(userId)
+    }
+
+    val name = patient?.name ?: "Unknown"
+    val gender = patient?.sex ?: "Unknown"
+    val totalScore = when (gender) {
+        "Male" -> patient?.heifaTotalScoreMale ?: 0.0
+        "Female" -> patient?.heifaTotalScoreFemale ?: 0.0
+        else -> 0.0
+    }
+
+    Log.d("DEBUG", "User ID: $userId, Name: $name, Gender: ${patient?.sex}, Total Score: $totalScore")
+
+    if (patient == null) {
+        CircularProgressIndicator(modifier = Modifier.fillMaxSize().wrapContentSize(Alignment.Center))
+        return
+    }
 
     Column(
         modifier = Modifier
@@ -154,24 +181,21 @@ fun HomePage() {
             .padding(20.dp),
         verticalArrangement = Arrangement.Top
     ){
+        Spacer(modifier = Modifier.height(15.dp))
 
-        Spacer(modifier = Modifier.height(15.dp)) // Add space to the top of the column
-
-        // Greeting the user
         Text(
             text = "Hello,",
             fontSize = 25.sp,
             modifier = Modifier.padding(bottom = 8.dp)
         )
         Text(
-            text = "User $currentUserId",
+            text = name,
             fontSize = 40.sp,
             fontWeight = FontWeight.Bold
         )
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        // Row for the information about changing details & the edit button
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -179,12 +203,12 @@ fun HomePage() {
         ){
             Text(
                 text = "You've already filled in your Food Intake Questionnaire, but you can change details here:",
-                style = androidx.compose.ui.text.TextStyle(fontSize = 15.sp),
+                style = TextStyle(fontSize = 15.sp),
                 modifier = Modifier.weight(1f)
             )
             Button(
                 onClick = {
-                    context.startActivity(Intent(context, QuestionnairePage::class.java)) // Takes user to previous page to edit their details
+                    context.startActivity(Intent(context, QuestionnairePage()::class.java))
                 },
                 modifier = Modifier
                     .padding(horizontal = 30.dp, vertical = 8.dp)
@@ -199,9 +223,8 @@ fun HomePage() {
             }
         }
 
-        Spacer(modifier = Modifier.height(10.dp)) // Add space
+        Spacer(modifier = Modifier.height(10.dp))
 
-        // Add image
         Image(
             painter = painterResource(id = R.drawable.plate),
             contentDescription = "Plate",
@@ -210,21 +233,20 @@ fun HomePage() {
                 .height(250.dp)
         )
 
-        Spacer(modifier = Modifier.height(10.dp)) // Add space
+        Spacer(modifier = Modifier.height(10.dp))
 
-        // Display current user score
         Text(
             text = "My Score",
-            style = androidx.compose.ui.text.TextStyle(fontSize = 18.sp),
+            style = TextStyle(fontSize = 18.sp),
             fontWeight = FontWeight.Bold
         )
 
-        Spacer(modifier = Modifier.height(7.dp)) // Add space
+        Spacer(modifier = Modifier.height(7.dp))
 
         Row(
             verticalAlignment = Alignment.CenterVertically) {
 
-            Image( // App logo
+            Image(
                 painter = painterResource(id = R.drawable.rounduparrow),
                 contentDescription = "Up Arrow",
                 modifier = Modifier.size(25.dp)
@@ -242,7 +264,7 @@ fun HomePage() {
                 contentAlignment = Alignment.CenterEnd
             ){
                 Text(
-                    text = "$userTotalScore / 100", // Displays their total score based on their user id and gender out of 100
+                    text = "$totalScore / 100",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.Green
@@ -250,129 +272,164 @@ fun HomePage() {
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp)) // Add space
+        Spacer(modifier = Modifier.height(16.dp))
 
-        // Add a light divider
         HorizontalDivider(
             modifier = Modifier.padding(vertical = 8.dp),
-            thickness = 1.dp,        // Thin colour
-            color = Color.LightGray  // Light colour
+            thickness = 1.dp,
+            color = Color.LightGray
         )
 
-        Spacer(modifier = Modifier.height(10.dp)) // Add space
+        Spacer(modifier = Modifier.height(10.dp))
 
-        Text( // Providing information about the food quality score
+        Text(
             text = "What is the Food Quality Score?",
-            style = androidx.compose.ui.text.TextStyle(fontSize = 18.sp),
+            style = TextStyle(fontSize = 18.sp),
             fontWeight = FontWeight.Bold
         )
 
-        Spacer(modifier = Modifier.height(10.dp)) // Add space
+        Spacer(modifier = Modifier.height(10.dp))
 
         Text(
             text = "Your Food Quality Score provides a snapshot of how well your eating patterns align with established food guidelines, helping you identify both strengths and opportunities for improvement in your diet.\n\nThis personalised measurement considers various food groups including vegetables, fruits, whole grains, and proteins to give you practical insights for making healthier food choices.",
-            style = androidx.compose.ui.text.TextStyle(fontSize = 15.sp)
+            style = TextStyle(fontSize = 15.sp)
         )
     }
 }
 
 // Function for the Insights page to display the progress bars
 @Composable
-fun InsightsPage(navController: NavHostController, selectedItemState: MutableState<Int> = remember { mutableIntStateOf(0) }) {
-    // Retrieve the userId and userGender
-    val context = LocalContext.current
-    val sharedPreferences = context.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
-    val currentUserId = sharedPreferences.getString("userId", "Unknown") ?: "Unknown"
-    val currentUserGender = sharedPreferences.getString("Sex_$currentUserId", "Unknown") ?: "Unknown"
+fun InsightsPage(
+    navController: NavHostController,
+    userId: Int,
+    patientDao: PatientDAO, // inject the DAO directly
+    selectedItemState: MutableState<Int> = remember { mutableIntStateOf(0) }
+) {
 
-    Log.d("DEBUG", "Slider User ID: $currentUserId, Gender: $currentUserGender") // Check if the correct values have been retrieved
+    var patient by remember { mutableStateOf<Patient?>(null) }
 
-    val columnHeaders = listOf("Discretionary", "Vegetables", "Fruit", "Grains/Cereals", "Wholegrains", "Meat", "Dairy", "Sodium", "Alcohol", "Water", "Sugar", "Saturated fat", "Unsaturated fat")
-    val possibleScoreTotals = listOf("10.0", "10.0", "10.0", "5.0", "5.0", "10.0", "10.0", "10.0", "5.0", "5.0", "10.0", "5.0", "5.0")
-
-    val (filteredColumns, userValues) = remember {
-        genderFilteredColumns(context, currentUserId, currentUserGender)  // Lists column names based on the user gender
+    // Collect patient from DAO (Room Flow)
+    LaunchedEffect(userId) {
+        patient = patientDao.getPatientById(userId)
     }
 
-    Column( // Having a column to put all the UI elements inside
+    // Gender check function
+    fun isMalePatient(patient: Patient?): Boolean {
+        return patient?.sex.equals("male", ignoreCase = true)
+    }
+
+    // Column headers and max scores (same as before)
+    val columnHeaders = listOf(
+        "Discretionary", "Vegetables", "Fruit", "Grains/Cereals", "Wholegrains", "Meat", "Dairy",
+        "Sodium", "Alcohol", "Water", "Sugar", "Saturated fat", "Unsaturated fat"
+    )
+
+    val maxScores = listOf(10f, 10f, 10f, 5f, 5f, 10f, 10f, 10f, 5f, 5f, 10f, 5f, 5f)
+
+    val userValues = patient?.let {
+        val isMale = isMalePatient(it)
+
+        listOf(
+            if (isMale) it.discretionaryHeifaScoreMale else it.discretionaryHeifaScoreFemale,
+            if (isMale) it.vegetablesHeifaScoreMale else it.vegetablesHeifaScoreFemale,
+            if (isMale) it.fruitHeifaScoreMale else it.fruitHeifaScoreFemale,
+            if (isMale) it.grainsAndCerealsHeifaScoreMale else it.grainsAndCerealsHeifaScoreFemale,
+            if (isMale) it.wholeGrainsHeifaScoreMale else it.wholeGrainsHeifaScoreFemale,
+            if (isMale) it.meatAndAlternativesHeifaScoreMale else it.meatAndAlternativesHeifaScoreFemale,
+            if (isMale) it.dairyAndAlternativesHeifaScoreMale else it.dairyAndAlternativesHeifaScoreFemale,
+            if (isMale) it.sodiumHeifaScoreMale else it.sodiumHeifaScoreFemale,
+            if (isMale) it.alcoholHeifaScoreMale else it.alcoholHeifaScoreFemale,
+            if (isMale) it.waterHeifaScoreMale else it.waterHeifaScoreFemale,
+            if (isMale) it.sugarHeifaScoreMale else it.sugarHeifaScoreFemale,
+            if (isMale) it.saturatedFatHeifaScoreMale else it.saturatedFatHeifaScoreFemale,
+            if (isMale) it.unsaturatedFatHeifaScoreMale else it.unsaturatedFatHeifaScoreFemale,
+        )
+    } ?: emptyList()
+
+    Column(
         modifier = Modifier
-            .padding(start = 20.dp, end = 20.dp)
+            .padding(horizontal = 20.dp)
             .fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(0.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-    ){
+    ) {
 
-        Spacer(modifier = Modifier.height(50.dp)) // Add space
+        Spacer(modifier = Modifier.height(50.dp))
 
-        Text( // Displaying the title
+        Text(
             text = "Insights: Food Score",
-            style = androidx.compose.ui.text.TextStyle(fontSize = 25.sp),
+            style = TextStyle(fontSize = 25.sp),
             fontWeight = FontWeight.Bold
         )
 
-        Spacer(modifier = Modifier.height(30.dp)) // Add space
+        Spacer(modifier = Modifier.height(30.dp))
 
-        // Show the progress bars for each food category based on user gender
-        filteredColumns.forEachIndexed { index, column ->
-            var progress by remember { mutableStateOf(userValues.getOrNull(index)?.toFloatOrNull() ?: 0f) } // Holds the value of the category
-            val maxProgress = possibleScoreTotals.getOrNull(index)?.toFloat() ?: 10f // Call the max values and default to 10 if none
+        columnHeaders.forEachIndexed { index, column ->
+            var progress by remember { mutableDoubleStateOf(userValues.getOrNull(index) ?: 0.0) }
+            val maxProgress = maxScores.getOrNull(index) ?: 10f
 
-            // Defining my colours for the track
             val inactiveTrack = colorResource(id = R.color.purple_200)
             val activeTrack = colorResource(id = R.color.purple_500)
 
-            Row( // Put the column name, progress bar and possibleScoreTotals in the same row
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 6.dp),
-                horizontalArrangement = Arrangement.Center
-            ){
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
-                    text = columnHeaders.getOrNull(index) ?: "", // Retrieve column names then display, "" if there's null
-                    style = androidx.compose.ui.text.TextStyle(fontSize = 14.sp),
+                    text = column,
+                    style = TextStyle(fontSize = 14.sp),
                     modifier = Modifier.weight(1.5f),
                     fontWeight = FontWeight.Bold
                 )
 
-                LaunchedEffect(userValues.getOrNull(index)) {// Updates progress variable if something changes
-                    progress = userValues.getOrNull(index)?.toFloatOrNull() ?: 0f
+                LaunchedEffect(userValues.getOrNull(index)) {
+                    progress = userValues.getOrNull(index) ?: 0.0
                 }
 
-                LinearProgressIndicator( // Calling the progress bars
-                    progress = { progress / maxProgress },
+                LinearProgressIndicator(
+                    progress = (progress / maxProgress).toFloat().coerceIn(0f, 1f),
                     modifier = Modifier
-                        .weight(3f)
+                        .weight(2f)
                         .height(5.dp),
-                    color = activeTrack, // Choosing the color for the filled section
-                    trackColor = inactiveTrack // Choosing the color for the unfilled value
+                    color = activeTrack,
+                    trackColor = inactiveTrack
                 )
 
                 Spacer(modifier = Modifier.width(10.dp))
 
-                Text(
-                    text = "${progress}/${possibleScoreTotals.getOrNull(index) ?: ""}",
-                    style = androidx.compose.ui.text.TextStyle(fontSize = 15.sp),
-                    modifier = Modifier.weight(0.9f)
-                )
+                Box(
+                    contentAlignment = Alignment.CenterEnd
+                ){
+                    Text(
+                        text = "${"%.1f".format(progress)}/${maxProgress}",
+                        style = TextStyle(fontSize = 15.sp)
+                    )
+                }
             }
         }
-        TotalValues(context, currentUserId, currentUserGender) // Display total values for each stat
+
+        // Total score section
+        patient?.let { nonNullPatient ->
+            val isMale = isMalePatient(nonNullPatient)
+            TotalValues(patient = nonNullPatient, isMale = isMale)
+        }
 
         Column(
-            modifier = Modifier
-                .fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally, // Center buttons horizontally
-            verticalArrangement = Arrangement.spacedBy(5.dp) // Add space between buttons
-        ){
-            //NutriCoach Page
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
             Button(
                 modifier = Modifier.sizeIn(minWidth = 120.dp, minHeight = 40.dp),
                 onClick = {
                     selectedItemState.value = 2
-                    navController.navigate("NutriCoach") // Navigate to the NutriCoach page
+                    navController.navigate("NutriCoach")
                 }
-            ){
-                Image( //Icon for nutricoach button
+            ) {
+                Image(
                     painter = painterResource(id = R.drawable.rocket),
                     contentDescription = "Rocket Image",
                     modifier = Modifier
@@ -384,6 +441,7 @@ fun InsightsPage(navController: NavHostController, selectedItemState: MutableSta
         }
     }
 }
+
 
 // Function for the NutriCoach page to be implemented in the future
 @Composable
@@ -431,7 +489,7 @@ fun SettingsPage(navController: NavHostController) {
     ){
         Text( // Providing information about the food quality score
             text = "Settings",
-            style = androidx.compose.ui.text.TextStyle(fontSize = 25.sp),
+            style = TextStyle(fontSize = 25.sp),
             fontWeight = FontWeight.Bold
         )
 
@@ -444,7 +502,7 @@ fun SettingsPage(navController: NavHostController) {
         ){
             Text( // Providing information about the food quality score
                 text = "ACCOUNT",
-                style = androidx.compose.ui.text.TextStyle(fontSize = 15.sp),
+                style = TextStyle(fontSize = 15.sp),
                 fontWeight = FontWeight.Bold,
                 color = Color.Gray
             )
@@ -502,7 +560,7 @@ fun SettingsPage(navController: NavHostController) {
 
             Text( // Providing information about the food quality score
                 text = "OTHER SETTINGS",
-                style = androidx.compose.ui.text.TextStyle(fontSize = 15.sp),
+                style = TextStyle(fontSize = 15.sp),
                 fontWeight = FontWeight.Bold,
                 color = Color.Gray
             )
@@ -515,7 +573,7 @@ fun SettingsPage(navController: NavHostController) {
                     context.startActivity(Intent(context, LoginPage::class.java))
                 }
             ){
-                Icon(Icons.Default.ExitToApp, contentDescription = "Log Out")
+                Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Log Out")
 
                 Spacer(modifier = Modifier.width(15.dp)) // Add space between content
 
@@ -524,7 +582,7 @@ fun SettingsPage(navController: NavHostController) {
                     modifier = Modifier.fillMaxWidth(),
                     contentAlignment = Alignment.CenterEnd
                 ){
-                    Icon(Icons.Default.KeyboardArrowRight, contentDescription = "Arrow Right")
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Arrow Right")
                 }
             }
 
@@ -543,7 +601,7 @@ fun SettingsPage(navController: NavHostController) {
                     modifier = Modifier.fillMaxWidth(),
                     contentAlignment = Alignment.CenterEnd
                 ){
-                    Icon(Icons.Default.KeyboardArrowRight, contentDescription = "Arrow Right")
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Arrow Right")
                 }
             }
         }
@@ -591,8 +649,7 @@ fun ClinicianLoginPage(navController: NavHostController) {
 
         Button( // Login button
             onClick = {
-                //#TODO Create Credential validation against database
-                if (clinicianKey == "admin123") {
+                if (clinicianKey == "dollar-entry-apples") {
                     navController.navigate("ClinicianDashboard")
                 } else {
                     showDialog = true
@@ -600,7 +657,7 @@ fun ClinicianLoginPage(navController: NavHostController) {
             },
             modifier = Modifier.fillMaxWidth()
         ){ // Button Content
-            Icon(Icons.Default.ExitToApp, contentDescription = "Log In") // Icon for login button
+            Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Log In") // Icon for login button
 
             Spacer(modifier = Modifier.width(15.dp)) // Add space between content
 
@@ -643,141 +700,34 @@ fun ClinicianDashboardPage(navController: NavHostController) {
     }
 }
 
-// Function to get the column information based on the userGender
-fun genderFilteredColumns(context: Context, userId: String, userGender: String): Pair<List<String>, List<String>> {
-    val filteredColumns = mutableListOf<String>()
-    val userValues = mutableListOf<String>()
-
-    try { // Open the CSV file from assets
-        val reader = BufferedReader(InputStreamReader(context.assets.open("data.csv")))
-        val lines = reader.readLines() // Read all the lines from the data.csv file
-
-        if (lines.isNotEmpty()) {
-            val tableHeaders = lines.first().split(",").map { it.trim() } // Get the first line the tableHeaders
-            val relevantIndices = mutableListOf<Int>() // List to store the column indices based on the user gender's food categories
-
-            // Find gender-specific columns
-            tableHeaders.forEachIndexed { index, column ->
-                if (userGender.equals("Female", ignoreCase = false) && column.endsWith("Female", ignoreCase = false)) { // Ignore case false to check for upper and lower case
-                    if (index != 4) { // Ignore the HEIFApossibleScoreTotalscoreFemale but append all the other columns that end with "Female"
-                        filteredColumns.add(column) // Stored column names
-                        relevantIndices.add(index) // Stored column indices
-                    }
-                } else if (userGender.equals("Male", ignoreCase = false) && column.endsWith("Male", ignoreCase = false)) {
-                    if (index != 3) { // Ignore the HEIFApossibleScoreTotalscoreMale but append all the other columns that end with "Male"
-                        filteredColumns.add(column)
-                        relevantIndices.add(index)
-                    }
-                }
-            }
-
-            // Find the corresponding row for the userId
-            val userRow = lines.drop(1).find { line ->
-                val currentUserData = line.split(",").map { it.trim() }
-                currentUserData.size > 1 && currentUserData[1] == userId  // Check the second column for the userId
-            }?.split(",") ?: emptyList()
-
-            Log.d("CSVProcessor", "User Row: $userRow") // Check if the correct row is being retrieved for the user
-
-            if (userRow.isNotEmpty()) { // Find relevant values for each column based on the gender
-                relevantIndices.forEach { index ->
-                    if (!(userGender.equals("male", ignoreCase = true) && index == 3) &&
-                        !(userGender.equals("female", ignoreCase = true) && index == 4)) {
-                        userValues.add(
-                            userRow.getOrNull(index)?.trim() ?: "0"
-                        )
-                    }
-                }
-
-            } else {
-                Log.e("CSVProcessor", "User row not found for userId: $userId")
-            }
-
-            Log.d("CSVProcessor", "Filtered Columns: $filteredColumns") // Column names based on user gender
-            Log.d("CSVProcessor", "User Values: $userValues") // User values
-        }
-        reader.close() // Close reader after processing the data.csv
-    } catch (e: Exception) {
-        Log.e("CSVReader", "Error reading CSV file", e)
-    }
-    return Pair(filteredColumns, userValues) // Return filtered column and user values as a pair
-}
-
-// Function to show HEIFAtotalvaluegender
 @Composable
-fun TotalValues(context: Context, userId: String, userGender: String) {
-    var genderedScore by remember { mutableStateOf(0f) }
+fun TotalValues(patient: Patient, isMale: Boolean) {
+    val genderedScore = if (isMale) patient.heifaTotalScoreMale else patient.heifaTotalScoreFemale
 
-    try { // Open the CSV file from assets, try block to handle potential errors
-        val reader = BufferedReader(InputStreamReader(context.assets.open("data.csv")))
-        val lines = reader.readLines()
+    var progress by remember { mutableFloatStateOf(genderedScore.toFloat()) }
 
-        Log.d("CSVProcessor", "CSV file content: $lines") // Log the entire CSV content to check
+    val inactiveTrack = colorResource(id = R.color.purple_200)
+    val activeTrack = colorResource(id = R.color.purple_500)
 
-        if (lines.isNotEmpty()) { // Make sure file not empty
-            val tableHeaders = lines.first().split(",").map { it.trim() } // Get tableHeaders from the first row
-            Log.d("CSVProcessor", "Headers: $tableHeaders") // Check if tableHeaders are retrieved
-
-            // Find the userId row
-            val userRow = lines.drop(1).find { line ->
-                val currentUserData = line.split(",").map { it.trim() }
-                currentUserData.size > 1 && currentUserData[1] == userId // Check if userId is in the second column
-            }?.split(",") ?: emptyList() // If user row found then remove its commas otherwise return an empty list
-
-            Log.d("CSVProcessor", "User Row: $userRow")  // Check if rows are retrieved
-
-            // Find the column index based on gender
-            if (userRow.isNotEmpty()) {
-                var genderedScoreString: String? = null // Initialise variable to store gender value
-
-                if (userGender.equals("Male", ignoreCase = true)) { // Access the 4th column if Male
-                    genderedScoreString = userRow.getOrNull(3)?.trim()
-                }
-                else if (userGender.equals("Female", ignoreCase = true)) { // Access the 5th column if Male
-                    genderedScoreString =
-                        userRow.getOrNull(4)?.trim() // 5th column for female
-                }
-
-                Log.d("CSVProcessor", "Gender-specific value string for $userGender: $genderedScoreString") // Check the HEIFA gender total value retrieved
-
-                genderedScore = genderedScoreString?.toFloatOrNull() ?: 0f // Convert string to float
-            } else {
-                Log.e("CSVProcessor", "User row not found for userId: $userId")
-            }
-        }
-        reader.close() // Close the reader
-    } catch (e: Exception) {
-        Log.e("CSVReader", "Error reading CSV file", e)
-    }
-
-    // UI to show slider and HEIFA gender total value
-    Column(
-        modifier = Modifier.padding(1.dp)) {
-
-        Spacer(modifier = Modifier.height(45.dp)) // Add space
+    Column(modifier = Modifier.padding(1.dp)) {
+        Spacer(modifier = Modifier.height(45.dp))
 
         Text(
             text = "Total Food Quality Score",
-            style = androidx.compose.ui.text.TextStyle(fontSize = 17.sp),
+            style = TextStyle(fontSize = 17.sp),
             fontWeight = FontWeight.Bold
         )
 
-        Row( // Row to hold the HEIFA gender column name, progress bar and value
+        Row(
             modifier = Modifier.padding(1.dp),
             verticalAlignment = Alignment.CenterVertically
-        ){
-            var progress by remember { mutableStateOf(genderedScore) } // Mutable variable to hold HEIFA gender value
-            
-            val inactiveTrack = colorResource(id = R.color.purple_200)
-            val activeTrack = colorResource(id = R.color.purple_500)
-
-            // Use launched effect to make sure the slider stays the same
+        ) {
             LaunchedEffect(genderedScore) {
-                progress = genderedScore // Keeps the progress value to the gender specific value
+                progress = genderedScore.toFloat()
             }
 
-            LinearProgressIndicator( // Progress bars
-                progress = { progress / 100f },
+            LinearProgressIndicator(
+                progress = (progress / 100f).coerceIn(0f, 1f),
                 modifier = Modifier
                     .weight(5f)
                     .height(6.dp),
@@ -785,49 +735,48 @@ fun TotalValues(context: Context, userId: String, userGender: String) {
                 trackColor = inactiveTrack
             )
 
-            Spacer(modifier = Modifier.width(10.dp)) // Add space
+            Spacer(modifier = Modifier.width(10.dp))
 
-            Text( // Displays the score value out of 100
-                text = "${progress}/100",
-                style = androidx.compose.ui.text.TextStyle(fontSize = 14.sp),
+            Text(
+                text = "${"%.1f".format(progress)}/100",
+                style = TextStyle(fontSize = 14.sp),
                 modifier = Modifier.weight(1f)
             )
         }
 
         val context = LocalContext.current
-        val shareScore = "My total food quality score is $genderedScore!" // Sharing message for the gender specific value
+        val shareScore = "My total food quality score is $progress!"
 
-        Spacer(modifier = Modifier.height(20.dp)) // Add space
+        Spacer(modifier = Modifier.height(20.dp))
 
         Column(
-            modifier = Modifier
-                .fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally, // Center buttons horizontally
-            verticalArrangement = Arrangement.spacedBy(5.dp) // Add space between buttons
-        ){
-            Button( // Share button to send food quality using an intent
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            Button(
                 onClick = {
                     val shareIntent = Intent(Intent.ACTION_SEND).apply {
                         type = "text/plain"
-                        putExtra(Intent.EXTRA_TEXT, shareScore) // Add the share text
+                        putExtra(Intent.EXTRA_TEXT, shareScore)
                     }
-                    // Start the activity to share the text
                     context.startActivity(Intent.createChooser(shareIntent, "Share with someone"))
                 },
-                modifier = Modifier.sizeIn(minWidth = 120.dp, minHeight = 40.dp) // Makes the button smaller
-            ){
-                Icon( // Icon for the share button
+                modifier = Modifier.sizeIn(minWidth = 120.dp, minHeight = 40.dp)
+            ) {
+                Icon(
                     Icons.Filled.Share,
                     contentDescription = "Share",
                     modifier = Modifier
                         .size(25.dp)
                         .padding(end = 5.dp)
                 )
-                Text("Share with someone") // Button text
+                Text("Share with someone")
             }
         }
     }
 }
+
 
 @Composable
 fun SearchFruits(viewModel: FruitViewModel = viewModel()) {
@@ -1073,7 +1022,7 @@ fun AddMessageDialogContent(viewModel: MessageViewModel, onCloseDialog: () -> Un
             }
         }
 
-        Divider(thickness = 3.dp, color = Color.DarkGray, modifier = Modifier.padding(vertical = 18.dp))
+        HorizontalDivider(thickness = 3.dp, color = Color.DarkGray, modifier = Modifier.padding(vertical = 18.dp))
 
         ActionButtons(
             onDeleteAll = {

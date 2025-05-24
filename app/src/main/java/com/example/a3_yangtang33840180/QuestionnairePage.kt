@@ -71,6 +71,10 @@ class QuestionnairePage : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        // Retrieve the userId passed from LoginPage via Intent
+        val userId = intent.getIntExtra("USER_ID", -1)
+
         setContent {
             A3_YangTang33840180Theme {
                 val mContext = LocalContext.current // Get the current context of the app
@@ -250,8 +254,9 @@ class QuestionnairePage : ComponentActivity() {
                                 sharedPref.apply()
 
                                 // Go to next screen after saved
-                                val intent = Intent(mContext, ActivityPage::class.java)
-                                mContext.startActivity(intent)
+                                val intent = Intent(applicationContext, ActivityPage::class.java)
+                                intent.putExtra("USER_ID", userId)
+                                startActivity(intent)
                             }) {
                                 Text(text = "Save") // Button text
                             }

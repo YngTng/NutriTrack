@@ -18,21 +18,23 @@ class PatientRepository(private val patientDao: PatientDAO) {
         patientDao.updatePatient(patient)
     }
 
-    suspend fun deletePatient(patient: Patient) {
-        patientDao.deletePatient(patient)
-    }
-
-    suspend fun deletePatientById(patientId: Int) {
-        patientDao.deletePatientById(patientId)
-    }
-
-    suspend fun deleteAllPatients() {
-        patientDao.deleteAllPatients()
-    }
-
     suspend fun getPatientById(id: Int): Patient? {
         return patientDao.getPatientById(id)
     }
 
     fun getAllPatients(): Flow<List<Patient>> = patientDao.getAllPatients()
+
+    companion object {
+        @Volatile
+        private var INSTANCE: PatientRepository? = null
+
+        fun getInstance(context: Context): PatientRepository {
+            return INSTANCE ?: synchronized(this) {
+                val database = PatientDatabase.getDatabase(context)
+                val instance = PatientRepository(database.patientDao())
+                INSTANCE = instance
+                instance
+            }
+        }
+    }
 }

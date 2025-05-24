@@ -29,7 +29,10 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch {
             val patients = DatabaseModule.prepopulateDatabase(this@MainActivity)
             val dao = PatientDatabase.getDatabase(applicationContext).patientDao()
-            dao.insertPatients(patients)
+            val existingCount = dao.getPatientCount()
+            if (existingCount == 0) {
+                dao.insertPatients(patients)
+            }
         }
 
         enableEdgeToEdge() // Makes the app use the whole screen

@@ -28,7 +28,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
 import com.example.a3_yangtang33840180.data.patients.PatientDatabase
 import com.example.a3_yangtang33840180.data.patients.PatientRepository
 import com.example.a3_yangtang33840180.ui.theme.A3_YangTang33840180Theme
@@ -46,7 +45,7 @@ class RegistrationPage : ComponentActivity() {
                     modifier = Modifier.fillMaxSize()
                 ) { innerPadding ->
                     Column(modifier = Modifier.padding(innerPadding)) {
-                        RegisterationScreen(repository = repository)
+                        RegistrationScreen(repository = repository)
                     }
                 }
             }
@@ -55,7 +54,7 @@ class RegistrationPage : ComponentActivity() {
 }
 
 @Composable
-fun RegisterationScreen(
+fun RegistrationScreen(
     repository: PatientRepository
 ) {
     val context = LocalContext.current

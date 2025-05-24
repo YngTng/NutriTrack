@@ -73,5 +73,4 @@ data class Patient (
     val unsaturatedFatHeifaScoreMale: Double,
     val unsaturatedFatHeifaScoreFemale: Double,
     val unsaturatedFatServeSize: Double,
-    //val foodIntake: FoodIntake
 )
