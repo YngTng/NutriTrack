@@ -4,7 +4,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 @Entity(tableName = "patients")
-class Patient (
+data class Patient (
     //includes UserID, PhoneNumber, Name, Sex, and all scores
     @PrimaryKey
     val userId: Int,

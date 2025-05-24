@@ -8,7 +8,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
 class PatientViewModel(context: Context) : ViewModel() {
-    private val patientRepository: PatientRepository = PatientRepository(context, viewModelScope)
+    private val patientRepository: PatientRepository = PatientRepository(
+        PatientDatabase.getDatabase(context).patientDao()
+    )
+
     val allPatients: Flow<List<Patient>> = patientRepository.getAllPatients()
 
     fun insertPatient(patient: Patient) = viewModelScope.launch {

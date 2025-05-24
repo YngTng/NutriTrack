@@ -4,32 +4,35 @@ import android.content.Context
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 
-class PatientRepository(context: Context, scope: CoroutineScope) {
-    private val patientDAO: PatientDAO = PatientDatabase.getDatabase(context).patientDao()
+class PatientRepository(private val patientDao: PatientDAO) {
 
     suspend fun insertPatient(patient: Patient) {
-        patientDAO.insertPatient(patient)
+        patientDao.insertPatient(patient)
     }
 
     suspend fun insertPatients(patients: List<Patient>) {
-        patientDAO.insertPatients(patients)
+        patientDao.insertPatients(patients)
     }
 
     suspend fun updatePatient(patient: Patient) {
-        patientDAO.updatePatient(patient)
+        patientDao.updatePatient(patient)
     }
 
     suspend fun deletePatient(patient: Patient) {
-        patientDAO.deletePatient(patient)
+        patientDao.deletePatient(patient)
     }
 
     suspend fun deletePatientById(patientId: Int) {
-        patientDAO.deletePatientById(patientId)
+        patientDao.deletePatientById(patientId)
     }
 
     suspend fun deleteAllPatients() {
-        patientDAO.deleteAllPatients()
+        patientDao.deleteAllPatients()
     }
 
-    fun getAllPatients(): Flow<List<Patient>> = patientDAO.getAllPatients()
+    suspend fun getPatientById(id: Int): Patient? {
+        return patientDao.getPatientById(id)
+    }
+
+    fun getAllPatients(): Flow<List<Patient>> = patientDao.getAllPatients()
 }

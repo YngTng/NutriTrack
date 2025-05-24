@@ -23,12 +23,15 @@ interface PatientDAO {
     @Delete
     suspend fun deletePatient(patient: Patient)
 
+    @Query("SELECT * FROM patients")
+    fun getAllPatients(): Flow<List<Patient>>
+
+    @Query("SELECT * FROM patients WHERE userId = :id")
+    suspend fun getPatientById(id: Int): Patient?
+
     @Query("DELETE FROM patients WHERE userId = :patientId")
     suspend fun deletePatientById(patientId: Int)
 
     @Query("DELETE FROM patients")
     suspend fun deleteAllPatients()
-
-    @Query("SELECT * FROM patients")
-    fun getAllPatients(): Flow<List<Patient>>
 }
