@@ -1,8 +1,10 @@
 package com.example.a3_yangtang33840180
 
+import android.app.Activity
 import android.os.Bundle
 import android.util.Log
 import android.content.Intent
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -56,13 +58,20 @@ import com.example.a3_yangtang33840180.ui.theme.A3_YangTang33840180Theme
 class ActivityPage : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val userId = intent.getIntExtra("userIdInt", -1)
+        if (userId == -1) {
+            Toast.makeText(this, "User ID not found.", Toast.LENGTH_LONG).show()
+            finish()
+            return
+        }
+
         enableEdgeToEdge()
         setContent {
             A3_YangTang33840180Theme {
                 val navController: NavHostController = rememberNavController() // Keeps track of current screen
                 val selectedItemState = remember { mutableIntStateOf(0) }
 
-                val userId = intent.getIntExtra("USER_ID", -1)
                 val context = LocalContext.current
                 val db = remember { PatientDatabase.getDatabase(context) }
                 val patientDao = remember { db.patientDao() }
@@ -210,7 +219,11 @@ fun HomePage(userId: Int) {
             )
             Button(
                 onClick = {
-                    context.startActivity(Intent(context, QuestionnairePage()::class.java))
+                    val intent = Intent(context, QuestionnairePage::class.java).apply {
+                        putExtra("userIdInt", userId)
+                    }
+                    context.startActivity(intent)
+                    (context as? Activity)?.finish()
                 },
                 modifier = Modifier
                     .padding(start = 25.dp)

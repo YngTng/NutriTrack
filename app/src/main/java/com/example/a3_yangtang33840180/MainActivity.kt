@@ -1,5 +1,6 @@
 package com.example.a3_yangtang33840180
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -93,9 +94,10 @@ fun SplashScreen(modifier: Modifier = Modifier) {
             Button(
                 modifier = Modifier.fillMaxWidth(),
                 onClick = {
-                    context.startActivity(Intent(context, LoginPage()::class.java))
+                    context.startActivity(Intent(context, LoginPage::class.java))
+                    (context as? Activity)?.finish() // Close MainActivity
                 }
-            ){
+            ) {
                 Text("Login")
             }
 

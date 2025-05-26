@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
 
@@ -12,8 +11,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.A3_YangTang33840180"
-        tools:targetApi="31">
+        android:theme="@style/Theme.A3_YangTang33840180">
         <activity
             android:name=".RegistrationPage"
             android:exported="false"
@@ -25,19 +23,16 @@
             android:label="@string/title_activity_page"
             android:theme="@style/Theme.A3_YangTang33840180" />
         <activity
-            android:name=".QuestionnairePage"
-            android:exported="false"
-            android:label="@string/title_activity_questionnaire_page"
-            android:theme="@style/Theme.A3_YangTang33840180" />
-        <activity
             android:name=".LoginPage"
             android:exported="false"
             android:label="@string/title_activity_login_page"
             android:theme="@style/Theme.A3_YangTang33840180" />
         <activity
+            android:name=".QuestionnairePage"
+            android:exported="false" />
+        <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:label="@string/app_name"
             android:theme="@style/Theme.A3_YangTang33840180">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

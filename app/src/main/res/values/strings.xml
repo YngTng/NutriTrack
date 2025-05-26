@@ -5,6 +5,6 @@
     <string name="title_activity_page">ActivityPage</string>
     <string name="title_activity_registeration_page">RegisterationPage</string>
     <string name="title_activity_nutri_coach_page">NutriCoachPage</string>
-    <string name="results_placeholder"></string>
+    <string name="results_placeholder" />
     <string name="title_activity_registration_page">RegistrationPage</string>
 </resources>

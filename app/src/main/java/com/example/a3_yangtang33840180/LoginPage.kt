@@ -1,5 +1,6 @@
 package com.example.a3_yangtang33840180
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
@@ -9,61 +10,48 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.launch
-import com.example.a3_yangtang33840180.data.patients.PatientDatabase
-import com.example.a3_yangtang33840180.ui.theme.ui.theme.A3_YangTang33840180Theme
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import com.example.a3_yangtang33840180.ui.theme.A3_YangTang33840180Theme
 import com.example.a3_yangtang33840180.data.patients.PatientRepository
-import java.io.BufferedReader
-import java.io.InputStreamReader
+import kotlin.jvm.java
 
 class LoginPage : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        val repository = PatientRepository.getInstance(applicationContext)
+        val viewModel = ViewModelProvider(this, object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return LoginViewModel(repository) as T
+            }
+        })[LoginViewModel::class.java]
+
         setContent {
             A3_YangTang33840180Theme {
-                val database = PatientDatabase.getDatabase(applicationContext)
-                val repository = PatientRepository(database.patientDao())
-                Scaffold(
-                    modifier = Modifier.fillMaxSize()
-                ) { innerPadding ->
-                    Column(modifier = Modifier.padding(innerPadding)) {
-                        LoginUI(repository = repository)
-                    }
-                }
+                LoginUI(viewModel)
             }
         }
     }
 }
 
 @Composable
-fun LoginUI(
-    repository: PatientRepository
-) {
+fun LoginUI(viewModel: LoginViewModel) {
     val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
-
     var userIdInput by remember { mutableStateOf("") }
     var passwordInput by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Top
+            .padding(24.dp)
+            .padding(top = 25.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
             text = "Login",
@@ -104,24 +92,21 @@ fun LoginUI(
 
         Button(
             onClick = {
-                coroutineScope.launch {
-                    val loginSuccessful = validateLoginInputById(
-                        inputUserId = userIdInput.toIntOrNull() ?: -1,
-                        inputPassword = passwordInput,
-                        repository = repository
-                    )
-
-                    if (loginSuccessful) {
+                viewModel.validateLogin(
+                    userId = userIdInput,
+                    password = passwordInput,
+                    onSuccess = { userId ->
                         Toast.makeText(context, "Login successful", Toast.LENGTH_SHORT).show()
-                        val intent = Intent(context, QuestionnairePage::class.java)
-                        intent.putExtra("USER_ID", userIdInput.toInt())
+                        val intent = Intent(context, QuestionnairePage::class.java).apply {
+                            putExtra("userIdInt", userId)
+                        }
                         context.startActivity(intent)
-                    } else {
-                        Toast
-                            .makeText(context, "Invalid ID or password", Toast.LENGTH_SHORT)
-                            .show()
+                        (context as? Activity)?.finish()
+                    },
+                    onError = { message ->
+                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                     }
-                }
+                )
             },
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -139,13 +124,4 @@ fun LoginUI(
             Text("Register")
         }
     }
-}
-
-suspend fun validateLoginInputById(
-    inputUserId: Int,
-    inputPassword: String,
-    repository: PatientRepository
-): Boolean {
-    val patient = repository.getPatientById(inputUserId)
-    return patient?.passWord == inputPassword
 }

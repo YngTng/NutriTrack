@@ -4,10 +4,16 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
+import com.example.a3_yangtang33840180.data.foodIntake.Converters
+import com.example.a3_yangtang33840180.data.foodIntake.FoodIntake
+import com.example.a3_yangtang33840180.data.foodIntake.FoodIntakeDao
 
-@Database(entities = [Patient::class], version = 1, exportSchema = false)
+@Database(entities = [Patient::class, FoodIntake::class], version = 1, exportSchema = false)
+@TypeConverters(Converters::class)
 abstract class PatientDatabase : RoomDatabase() {
     abstract fun patientDao(): PatientDAO
+    abstract fun foodIntakeDao(): FoodIntakeDao
 
     companion object {
         @Volatile
@@ -19,7 +25,8 @@ abstract class PatientDatabase : RoomDatabase() {
                     context.applicationContext,
                     PatientDatabase::class.java,
                     "patient_database"
-                ).build()
+                )
+                    .build()
                 INSTANCE = instance
                 instance
             }

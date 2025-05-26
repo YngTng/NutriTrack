@@ -1,55 +1,46 @@
 package com.example.a3_yangtang33840180
 
+import android.app.Activity
 import android.app.TimePickerDialog
-import android.content.Context.MODE_PRIVATE
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -60,572 +51,268 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.example.a3_yangtang33840180.ui.theme.A3_YangTang33840180Theme
+import androidx.lifecycle.ViewModelProvider
+import com.example.a3_yangtang33840180.data.foodIntake.FoodIntakeRepository
+import com.example.a3_yangtang33840180.data.foodIntake.FoodIntakeViewModel
+import com.example.a3_yangtang33840180.data.foodIntake.FoodIntakeViewModelFactory
+import com.example.a3_yangtang33840180.data.patients.PatientDatabase
 import java.util.Calendar
-
 
 class QuestionnairePage : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        val userId = intent.getIntExtra("userIdInt", -1)
+        if (userId == -1) {
+            Toast.makeText(this, "User ID not found.", Toast.LENGTH_LONG).show()
+            finish()
+            return
+        }
 
-        // Retrieve the userId passed from LoginPage via Intent
-        val userId = intent.getIntExtra("USER_ID", -1)
+        val dao = PatientDatabase.getDatabase(application).foodIntakeDao()
+        val repository = FoodIntakeRepository(dao)
+        val factory = FoodIntakeViewModelFactory(userId, repository)
+        val viewModel = ViewModelProvider(this, factory)[FoodIntakeViewModel::class.java]
 
         setContent {
-            A3_YangTang33840180Theme {
-                val mContext = LocalContext.current // Get the current context of the app
-                val currentUserID =getCurrentUserID() // Get current user id
-
-                Log.d("Questionnaire", "Current UserID: $currentUserID") // Check if currentUserId is correct
-
-                // Create new SharedPreferences file for current user
-                val sharedPref = mContext.getSharedPreferences("food_intake_${currentUserID}.sp", MODE_PRIVATE)
-
-                // Runs if UserId changes and sets default values if user doesn't have any selections
-                LaunchedEffect(currentUserID) {
-                    if (!sharedPref.contains("dropdown_selection")) {
-                        sharedPref.edit().putString("dropdown_selection", "Health Devotee").apply()
-                    }
-                }
-
-                // Creating mutable values that can be changed later
-                val mBiggestMeal = remember { mutableStateOf("") }
-                val mSleep = remember { mutableStateOf("") }
-                val mWakeUp = remember { mutableStateOf("") }
-
-                // Calls the timeFunction for the time boxes to choose times
-                val mBiggestMealTime = timeFunction(mBiggestMeal, "biggestMeal_${currentUserID}"
-                ) // Append userId to the time key
-                val mSleepTime = timeFunction(mSleep, "sleep_${currentUserID}")
-                val mWakeUpTime = timeFunction(mWakeUp, "wakeUp_${currentUserID}")
-
-                // Checks the state of the checkbox
-                val mCheckBoxState = remember { mutableStateOf(false) }
-
-                // List of drop down
-                val personas = listOf("Health Devotee", "Mindful Eater", "Wellness Striver", "Balance Seeker", "Health Procrastinator", "Food Carefree")
-                var mPersonaValue by remember { mutableStateOf(personas[0]) } // Default dropdown menu option is Health Devotee
-
-                Scaffold(
-                    modifier = Modifier.fillMaxSize()
-                ){ innerPadding ->
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(innerPadding)
-                    ){
-                        TopNavBar()
-
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(16.dp)  // Add padding here for content
-                                .verticalScroll(rememberScrollState()), // Make content scrollable
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ){
-                            Spacer(modifier = Modifier.height(15.dp))
-
-                            // Food Category Checkboxes
-                            Text(
-                                text = "Select Food Categories",
-                                fontWeight = FontWeight.Bold
-                            )
-                            Spacer(modifier = Modifier.height(10.dp))
-
-                            // Checkbox for food categories
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(150.dp)
-                            ) { CheckboxFunction() }
-
-                            HorizontalDivider(
-                                modifier = Modifier.padding(vertical = 8.dp),
-                                thickness = 2.dp,
-                                color = Color.LightGray
-                            )
-
-                            // Persona Section
-                            Text(
-                                text = "Your Persona",
-                                modifier = Modifier.padding(top = 16.dp),
-                                fontWeight = FontWeight.Bold
-                            )
-
-                            // Explaining text for the persona options
-                            Text(
-                                text = "People can be broadly classified into 6 different types based on their eating preferences. Click on each button below to find out the different types, and select the type that best fits you!",
-                                style = androidx.compose.ui.text.TextStyle(fontSize = 12.sp),
-                                modifier = Modifier.padding(top = 16.dp)
-                            )
-                            PersonaSelectionButtons() // Calling the persona buttons function
-
-                            Spacer(modifier = Modifier.height(16.dp)) // Adds space between elements
-
-                            Text(text = "Which persona best fits you?", fontWeight = FontWeight.Bold) // Asking user which persona fits them
-
-                            // Dropdown menu to select a persona
-                            PersonaDropdown(
-                                personaValue = mPersonaValue,
-                                onPersonaValueChange = { newValue ->
-                                    mPersonaValue = newValue }
-                            )
-
-                            HorizontalDivider(
-                                modifier = Modifier.padding(vertical = 8.dp),
-                                thickness = 2.dp,
-                                color = Color.LightGray
-                            )
-                            
-                            Spacer(modifier = Modifier.height(15.dp))
-
-                            // Timepickers
-                            Text(text = "Timings", fontWeight = FontWeight.Bold)
-
-                            // Display the question and time input
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
-                                    Text(
-                                        text = "What time of day approx. do you normally eat your biggest meal?",
-                                        style = androidx.compose.ui.text.TextStyle(fontSize = 13.sp)
-                                    )
-                                }
-                                Column {
-                                    TimeInput(
-                                        time = mBiggestMeal,
-                                        onClick = { mBiggestMealTime.show() }
-                                    )
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(10.dp))
-
-                            // Display the question and time input
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
-                                    Text(
-                                        text = "What time of day approx. do you go to sleep at night?",
-                                        style = androidx.compose.ui.text.TextStyle(fontSize = 13.sp)
-                                    )
-                                }
-                                Column {
-                                    TimeInput(
-                                        time = mSleep,
-                                        onClick = { mSleepTime.show() }
-                                    )
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(10.dp))
-
-                            // Display the question and time input
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
-                                    Text(
-                                        text = "What time of day approx. do you wake up in the morning?",
-                                        style = androidx.compose.ui.text.TextStyle(fontSize = 13.sp)
-                                    )
-                                }
-                                Column {
-                                    TimeInput(
-                                        time = mWakeUp,
-                                        onClick = { mWakeUpTime.show() }
-                                    )
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(30.dp))
-
-                            val sharedPref = mContext.getSharedPreferences("UserPrefs_${getCurrentUserID()}.sp", MODE_PRIVATE).edit()
-                            Button(onClick = {
-                                Log.d("Questionnaire", "Saving times for user $currentUserID")
-                                Log.d("Questionnaire", "Biggest Meal Time: ${mBiggestMeal.value}, Sleep Time: ${mSleep.value}, Wake Up Time: ${mWakeUp.value}")
-
-                                // Save selected time and preferences in SharedPreferences for the CurrentUserId
-                                sharedPref.putString("biggestMeal_${currentUserID}", mBiggestMeal.value)
-                                sharedPref.putString("sleep_${currentUserID}", mSleep.value)
-                                sharedPref.putString("wakeUp_${currentUserID}", mWakeUp.value)
-                                sharedPref.putString("dropdown_selection_${currentUserID}", mPersonaValue)
-                                sharedPref.putBoolean("checkbox_${currentUserID}", mCheckBoxState.value)
-                                sharedPref.apply()
-
-                                // Go to next screen after saved
-                                val intent = Intent(applicationContext, ActivityPage::class.java)
-                                intent.putExtra("USER_ID", userId)
-                                startActivity(intent)
-                            }) {
-                                Text(text = "Save") // Button text
-                            }
-                        }
-                    }
-                }
+            MaterialTheme {
+                QuestionnaireScreen(viewModel, userId)
             }
         }
     }
 }
 
-// Gets current user id from shared preferences
-@Composable
-fun getCurrentUserID(): String {
-    val context = LocalContext.current
-    val sharedPreferences = context.getSharedPreferences("UserPrefs", MODE_PRIVATE)
 
-    // Get the user id or default to "unknown" if can't be found
-    val userId = sharedPreferences.getString("userId", "Unknown") ?: "Unknown"
-    Log.d("UserID", "Retrieved UserID: $userId") // Log statement to verify
-    return sharedPreferences.getString("userId", "Unknown") ?: "Unknown"
-}
-
-// Top bar that displays "Food Intake Questionnaire" and a back button
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopNavBar(modifier: Modifier = Modifier) {
-    // For the back button press
-    val onBackPressedDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
+fun QuestionnaireScreen(viewModel: FoodIntakeViewModel, userId: Int) {
+    val context = LocalContext.current
+    val foodIntake by viewModel.foodIntake.collectAsState()
 
-    // Controls the scrolling behavior of the TopNavBar
-    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
-
-    // Creating the top bar
-    CenterAlignedTopAppBar(
-        title = {
-            Text(
-                "Food Intake Questionnaire", // Title of app
-                maxLines = 1 // Only show one line of title
-            )
-        },
-        // Creates back button
-        navigationIcon = {
-            IconButton(onClick = {
-                onBackPressedDispatcher?.onBackPressed() // When clicked go back
-            }) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Localised description"
-                )
-            }
-        },
-        scrollBehavior = scrollBehavior, // Adds scroll behaviour to top bar
-        modifier = modifier
+    val allFoods = listOf(
+        "Fruits", "Vegetables", "Grains", "Red Meat", "Seafood",
+        "Poultry", "Fish", "Eggs", "Nuts/Seeds"
     )
-}
-
-// This function is for the checkboxes arranged the 3x3 grid
-@Composable
-fun CheckboxFunction() {
-    val mContext = LocalContext.current
-    val userId = getCurrentUserID() // Get the current user id
-
-    val sharedPref = mContext.getSharedPreferences("UserPrefs_${userId}.sp", MODE_PRIVATE)
-
-    // List of food categories
-    val foodCategories = listOf("Fruits", "Vegetables", "Grains", "Red Meat", "Seafood", "Poultry", "Fish", "Eggs", "Nuts/Seeds")
-
-    // Initial state of each checkbox
-    val checkBoxStates = remember(userId) { foodCategories.associateWith { mutableStateOf(false) } }
-
-    // Load the saved checkbox state for current user
-    LaunchedEffect(userId) {
-
-        // Clear the state for to make sure only new UserId's data is loaded
-        foodCategories.forEach { category ->
-            checkBoxStates[category]?.value = false  // Clear the state first
-        }
-
-        // Then load the saved states
-        foodCategories.forEach { category -> // Loop so it loads each category
-            val savedState = sharedPref.getBoolean("${category}_$userId", false) // Use the category-specific key
-            checkBoxStates[category]?.value = savedState
-        }
-    }
-
-    // Display the checkboxes
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(0.dp)
-    ){
-        items(foodCategories.chunked(3)) { rowItems ->
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ){
-                rowItems.forEach { category ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically, // Align checkbox and text
-                        modifier = Modifier.weight(1f)
-                    ){
-                        Checkbox( // Checkbox for each category
-                            checked = checkBoxStates[category]?.value == true,
-                            onCheckedChange = { newState ->
-                                // Update the checkbox state and save to SharedPreferences
-                                checkBoxStates[category]?.value = newState
-                                sharedPref.edit().putBoolean("${category}_$userId", newState).apply()
-                                Log.d("CheckboxGrid", "Saved $category for user $userId: $newState")
-                            }
-                        )
-                        Spacer(modifier = Modifier.width(2.dp)) // Small gap between checkbox and text
-                        Text(text = category, fontSize = 12.sp)
-                    }
-                }
-            }
-        }
-    }
-}
-
-// Shows the persona buttons that users can click to find out more information
-@Composable
-fun PersonaSelectionButtons() {
-    val personas = listOf( // List of persona options
+    val allPersonas = listOf(
         "Health Devotee", "Mindful Eater", "Wellness Striver",
         "Balance Seeker", "Health Procrastinator", "Food Carefree"
     )
-
-    // Map for the persona descriptions, storing them in key value pairs
-    val optionDetails = mapOf(
-        "Health Devotee" to "I’m passionate about healthy eating & health plays a big part in my life. I use social media to follow active lifestyle personalities or get new recipes/exercise ideas. I may even buy superfoods or follow a particular type of diet. I like to think I am super healthy.",
-        "Mindful Eater" to "I’m health-conscious and being healthy and eating healthy is important to me. Although health means different things to different people, I make conscious lifestyle decisions about eating based on what I believe healthy means. I look for new recipes and healthy eating information on social media.",
-        "Wellness Striver" to "I aspire to be healthy (but struggle sometimes). Healthy eating is hard work! I’ve tried to improve my diet, but always find things that make it difficult to stick with the changes. Sometimes I notice recipe ideas or healthy eating hacks, and if it seems easy enough, I’ll give it a go.",
-        "Balance Seeker" to "I try and live a balanced lifestyle, and I think that all foods are okay in moderation. I shouldn’t have to feel guilty about eating a piece of cake now and again. I get all sorts of inspiration from social media like finding out about new restaurants, fun recipes and sometimes healthy eating tips.",
-        "Health Procrastinator" to "I’m contemplating healthy eating but it’s not a priority for me right now. I know the basics about what it means to be healthy, but it doesn’t seem relevant to me right now. I have taken a few steps to be healthier but I am not motivated to make it a high priority because I have too many other things going on in my life.",
-        "Food Carefree" to "I’m not bothered about healthy eating. I don’t really see the point and I don’t think about it. I don’t really notice healthy eating tips or recipes and I don’t care what I eat."
+    val personaDescriptions = mapOf(
+        "Health Devotee" to "You eat clean and consistent.",
+        "Mindful Eater" to "You're aware of how food affects your body.",
+        "Wellness Striver" to "You're always working on your diet.",
+        "Balance Seeker" to "You strive for nutritional balance.",
+        "Health Procrastinator" to "You delay healthy habits.",
+        "Food Carefree" to "You eat what you want, when you want."
     )
 
-    // Map for the persona pictures
-    val optionImages = mapOf(
-        "Health Devotee" to R.drawable.healthdevotee,
-        "Mindful Eater" to R.drawable.mindfuleater,
-        "Wellness Striver" to R.drawable.wellnessstriver,
-        "Balance Seeker" to R.drawable.balanceseeker,
-        "Health Procrastinator" to R.drawable.healthprocrastinator,
-        "Food Carefree" to R.drawable.foodcarefree
-    )
+    Spacer(modifier = Modifier.height(50.dp))
 
-    var selectedPersonaDesc by remember { mutableStateOf("") }
-    var showDialog by remember { mutableStateOf(false) }
+    foodIntake?.let { intake ->
 
-    //Grid for personas
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(1.dp)
-    ){
+        val selectedFoods = remember(intake.selectedFoods) { intake.selectedFoods.toMutableSet() }
+        var personaDropdown by remember { mutableStateOf(intake.selectedPersona ?: "") }
+        var mealTime by remember { mutableStateOf(intake.biggestMealTime ?: "00:00") }
+        var sleepTime by remember { mutableStateOf(intake.sleepTime ?: "00:00") }
+        var wakeTime by remember { mutableStateOf(intake.wakeTime ?: "00:00") }
 
-        // Row 1
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(1.dp)
+        val scrollState = rememberScrollState()
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
         ){
-            personas.take(3).forEach { option ->
-                Button(
-                    onClick = {
-                        selectedPersonaDesc = option
-                        showDialog = true // Show dialog with details of the selected option
-                    },
-                    modifier = Modifier.padding(2.dp), // Padding around button
-                    contentPadding = PaddingValues(9.dp)
-                ){
-                    Text( // Text displayed for each persona
-                        option,
-                        textAlign = TextAlign.Center,
-                        fontSize = 14.sp
-                    )
-                }
-            }
-        }
+            TopNavBar()
 
-        // Row 2
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(1.dp)
-        ){
-            personas.drop(3).forEach { option ->
-                Button(
-                    onClick = {
-                        selectedPersonaDesc = option // Set selected option when clicked
-                        showDialog = true // Show dialog with details of selected option
-                    },
-                    modifier = Modifier.padding(2.dp), // Padding around the button
-                    contentPadding = PaddingValues(8.dp)
-                ){
-                    Text( // Text displayed for each persona
-                        option, textAlign = TextAlign.Center,
-                        fontSize = 14.sp
-                    )
-                }
-            }
-        }
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(scrollState)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text("Tick all the food categories you can eat", fontWeight = FontWeight.Bold)
 
-        // If the dialog should be displayed, then display it with the pop up
-        if (showDialog) {
-            AlertDialog(
-                onDismissRequest = { showDialog = false }, // If user taps outside then dismiss the dialog
-                text = {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        optionImages[selectedPersonaDesc]?.let { imageRes ->
-                            Image(
-                                painter = painterResource(id = imageRes),
-                                contentDescription = "$selectedPersonaDesc Image", // Show image of selected persona
-                                modifier = Modifier.size(140.dp)
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(100.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(180.dp),
+                    userScrollEnabled = false
+                ) {
+                    items(allFoods) { item ->
+                        val checked = selectedFoods.contains(item)
+                        FilterChip(
+                            selected = checked,
+                            onClick = {
+                                if (checked) selectedFoods.remove(item) else selectedFoods.add(item)
+                                viewModel.updateFoodCategories(selectedFoods.toList())
+                            },
+                            label = { Text(item) }
+                        )
+                    }
+                }
+
+                Text("Your Persona", fontWeight = FontWeight.Bold)
+                Text("People can be broadly classified into 6 different types based on their eating preferences. Click on each button below to find out the different types, and select the type that best fits you!")
+
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(130.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(160.dp),
+                    userScrollEnabled = false
+                ) {
+                    items(allPersonas) { persona ->
+                        Button(
+                            onClick = {
+                                personaDescriptions[persona]?.let {
+                                    Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                                }
+                                viewModel.updatePersona(persona)
+                                personaDropdown = persona
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF9C27B0))
+                        ) {
+                            Text(persona, color = Color.White)
+                        }
+                    }
+                }
+
+                Text("Which persona best fits you?", fontWeight = FontWeight.Bold)
+                var expanded by remember { mutableStateOf(false) }
+                ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
+                    OutlinedTextField(
+                        value = personaDropdown,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Select option") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        modifier = Modifier.menuAnchor()
+                    )
+                    ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                        allPersonas.forEach { label ->
+                            DropdownMenuItem(
+                                text = { Text(label) },
+                                onClick = {
+                                    viewModel.updatePersona(label)
+                                    personaDropdown = label
+                                    expanded = false
+                                }
                             )
                         }
-                        Text(
-                            text = selectedPersonaDesc, // Shows persona title
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 25.sp,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(8.dp)
-                        )
-                        Text(
-                            text = optionDetails[selectedPersonaDesc] ?: "No details available.", // Shows persona description
-                            fontSize = 14.sp,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(16.dp)
-                        )
-                        Button(onClick = { showDialog = false }) {  // Close the dialog
-                            Text("Dismiss")
-                        }
                     }
-                },
-                confirmButton = {}
-            )
-        }
-    }
-}
+                }
 
-// Dropdown to let user select an option
-@Composable
-fun PersonaDropdown(
-    personaValue: String, // The current selected value in the dropdown
-    onPersonaValueChange: (String) -> Unit // Function to update the dropdown value
-){
-    var expanded by remember { mutableStateOf(false) } // Check whether dropdown is open or closed
+                Spacer(modifier = Modifier.height(16.dp))
 
-    val mContext = LocalContext.current
-    val userId = getCurrentUserID() // Get the logged-in user's ID
-    val sharedPref = mContext.getSharedPreferences("UserPrefs_${userId}.sp", MODE_PRIVATE)
+                Text("Select the times that best fits your habits", fontWeight = FontWeight.Bold)
 
+                TimeInput(label = "Biggest Meal Time", time = mealTime) {
+                    mealTime = it
+                    viewModel.updateBiggestMealTime(it)
+                }
 
-    // Load the saved dropdown value when the composable is first launched
-    LaunchedEffect(userId) {
-        val loadedDropDown = sharedPref.getString("dropdown_selection_${userId}", "Health Devotee")
-        onPersonaValueChange(loadedDropDown ?: "Health Devotee") // Update the value
-    }
+                TimeInput(label = "Sleep Time", time = sleepTime) {
+                    sleepTime = it
+                    viewModel.updateSleepTime(it)
+                }
 
-    Box(modifier = Modifier.padding(16.dp)) {
-        // Outlined Button with text and Dropdown icon
-        OutlinedButton(
-            onClick = { expanded = true },
-            modifier = Modifier.fillMaxWidth()
-        ){
+                TimeInput(label = "Wake Time", time = wakeTime) {
+                    wakeTime = it
+                    viewModel.updateWakeTime(it)
+                }
 
-            Text(text = personaValue, modifier = Modifier.weight(1f)) // Display the selected option
+                Spacer(modifier = Modifier.height(25.dp))
 
-            Icon(
-                imageVector = Icons.Default.ArrowDropDown,
-                contentDescription = "Dropdown",
-                modifier = Modifier.padding(start = 8.dp)
-            )
-        }
-
-        // Dropdown menu that shows options when button is clicked
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
-        ){
-            val personas = listOf("Health Devotee", "Mindful Eater", "Wellness Striver", "Balance Seeker", "Health Procrastinator", "Food Carefree")
-
-            personas.forEach { option -> // Each item in the dropdown menu
-                DropdownMenuItem(
-                    text = { Text(option) },
-                    onClick = {
-                        onPersonaValueChange(option) // Update the selected option
-                        expanded = false
-
-                        // Save selected value in SharedPreferences
-                        sharedPref.edit().putString("dropdown_selection_${userId}", option).apply()
-                        Log.d("PersonaDropdown", "Saved for user $userId: $option")
+                Button(
+                    modifier = Modifier
+                            .fillMaxWidth(),
+                onClick = {
+                    val intent = Intent(context, ActivityPage::class.java).apply {
+                        putExtra("userIdInt", userId)
                     }
-                )
+                    context.startActivity(intent)
+                    (context as? Activity)?.finish()
+                }){
+                    Text("Save", color = Color.White)
+                }
+
+                // Add some bottom padding to ensure the save button is not cut off
+                Spacer(modifier = Modifier.height(5.dp))
             }
         }
+    } ?: run {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
     }
 }
 
-// Time function to allow user to choose a time
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun timeFunction(mTime: MutableState<String>, timeKey: String): TimePickerDialog {
-    val mContext = LocalContext.current
-    val mCalendar = Calendar.getInstance()
-
-    val mHour = mCalendar.get(Calendar.HOUR_OF_DAY)
-    val mMinute = mCalendar.get(Calendar.MINUTE)
-
-    val userId = getCurrentUserID() // Get the logged-in user's ID
-    val sharedPref = mContext.getSharedPreferences("UserPrefs_${userId}.sp", MODE_PRIVATE)
-
-    // Load saved time when the composable is launched
-    LaunchedEffect(timeKey) {
-        val keyWithUserId = "${userId}_$timeKey" // Append the userId to the timeKey
-        val loadedTime = sharedPref.getString(keyWithUserId, "12:00")
-        mTime.value = loadedTime ?: "12:00" // Default value if none is saved
-        Log.d("TimeFunction", "Loaded time for $keyWithUserId: ${mTime.value}") // Log loaded time
-    }
-
-    return TimePickerDialog(
-        mContext,
-        { _, selectedHour: Int, selectedMinute: Int ->
-            val selectedTime = "$selectedHour:$selectedMinute"
-            mTime.value = selectedTime
-
-            // Save the selected time with the userId appended to the key
-            val keyWithUserId = "${userId}_$timeKey" // Append the userId to the timeKey
-            sharedPref.edit().putString(keyWithUserId, selectedTime).apply()
-            Log.d("TimePicker", "Saved time for $keyWithUserId: $selectedTime")
+fun TopNavBar() {
+    val context = LocalContext.current
+    CenterAlignedTopAppBar(
+        modifier = Modifier.fillMaxWidth(),
+        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            titleContentColor = MaterialTheme.colorScheme.primary,
+        ),
+        title = {
+            Text(
+                "Food Intake Questionnaire",
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         },
-        mHour, mMinute, false
+        navigationIcon = {
+            IconButton(onClick = {
+                context.startActivity(Intent(context, MainActivity::class.java))
+            }) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back"
+                )
+            }
+        },
     )
 }
 
-// Display selected time in a box and let user click to choose a time
 @Composable
-fun TimeInput(time: MutableState<String>, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .padding(2.dp)
-            .clickable(onClick = onClick)
-            .border(1.dp, Color.Gray, RoundedCornerShape(8.dp)) // To make the box corners rounded not sharp
-            .height(30.dp)
-            .width(140.dp),
-        contentAlignment = Alignment.CenterStart
-    ){
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(start = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ){
+fun TimeInput(label: String, time: String, onTimeChange: (String) -> Unit) {
+    val context = LocalContext.current
+    OutlinedTextField(
+        value = time,
+        onValueChange = {},
+        label = { Text(label) },
+        trailingIcon = {
+            IconButton(onClick = {
+                val cal = Calendar.getInstance()
+                val timeParts = time.split(":")
+                val hour = timeParts.getOrNull(0)?.toIntOrNull() ?: cal.get(Calendar.HOUR_OF_DAY)
+                val minute = timeParts.getOrNull(1)?.toIntOrNull() ?: cal.get(Calendar.MINUTE)
 
-            // Clock icon
-            Image(
-                painter = painterResource(id = R.drawable.clock),
-                contentDescription = "Clock Image",
-                modifier = Modifier.size(20.dp)
-            )
-
-            // Display selected time
-            Text(
-                text = if (time.value.isNotEmpty()) time.value else "00:00",
-                style = androidx.compose.ui.text.TextStyle(
-                    fontSize = 12.sp,
-                    color = if (time.value.isNotEmpty()) Color.Black else Color.Gray // If no time then make it grey
-                ),
-                modifier = Modifier
-                    .padding(start = 12.dp)
-                    .fillMaxWidth()
-            )
-        }
-    }
+                TimePickerDialog(
+                    context,
+                    { _, h, m -> onTimeChange(String.format("%02d:%02d", h, m)) },
+                    hour, minute, true
+                ).show()
+            }) {
+                Image(
+                    painter = painterResource(id = R.drawable.clock),
+                    contentDescription = "Clock Image",
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        },
+        readOnly = true,
+        modifier = Modifier.fillMaxWidth()
+    )
 }

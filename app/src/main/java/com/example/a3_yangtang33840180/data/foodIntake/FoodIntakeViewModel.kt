@@ -1,36 +1,87 @@
 package com.example.a3_yangtang33840180.data.foodIntake
 
-import android.content.Context
+// QuestionnaireViewModel.kt
+import android.app.Application
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.a3_yangtang33840180.data.patients.PatientViewModel
+import com.example.a3_yangtang33840180.data.patients.PatientDatabase
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-class FoodIntakeViewModel(private val foodIntakeRepository: FoodIntakeRepository) : ViewModel() {
+// FoodIntakeViewModel.kt
+class FoodIntakeViewModel(
+    private val userId: Int, // Now Int
+    private val repository: FoodIntakeRepository
+) : ViewModel() {
 
     private val _foodIntake = MutableStateFlow<FoodIntake?>(null)
     val foodIntake: StateFlow<FoodIntake?> = _foodIntake
 
-    fun loadFoodIntake(userId: Int) {
+    init {
+        loadFoodIntake()
+    }
+
+    private fun loadFoodIntake() {
         viewModelScope.launch {
-            val f = foodIntakeRepository.getFoodIntakeByUserId(userId)
-            _foodIntake.value = f
+            val existing = repository.getFoodIntakeByUserId(userId)
+            if (existing != null) {
+                _foodIntake.value = existing
+            } else {
+                // Create new empty record if none exists
+                val newFoodIntake = FoodIntake(
+                    patientId = userId, // userId is Int
+                    selectedFoods = emptyList(),
+                    sleepTime = "22:00",
+                    wakeTime = "06:00",
+                    biggestMealTime = "12:00",
+                    selectedPersona = "Health Devotee"
+                )
+                repository.upsertFoodIntake(newFoodIntake)
+                _foodIntake.value = newFoodIntake
+            }
         }
     }
 
-    fun insertOrUpdateFoodIntake(foodIntake: FoodIntake) {
-        viewModelScope.launch {
-            foodIntakeRepository.insert(foodIntake)
-            _foodIntake.value = foodIntake
-        }
+    fun updateFoodCategories(selectedCategories: List<String>) {
+        val current = _foodIntake.value ?: return
+        val updated = current.copy(selectedFoods = selectedCategories)
+        saveFoodIntake(updated)
     }
 
-    class PatientViewModelFactory(private val context: Context) : ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return PatientViewModel(context.applicationContext) as T
+    fun updateSleepTime(time: String) {
+        val current = _foodIntake.value ?: return
+        val updated = current.copy(sleepTime = time)
+        saveFoodIntake(updated)
+    }
+
+    fun updateWakeTime(time: String) {
+        val current = _foodIntake.value ?: return
+        val updated = current.copy(wakeTime = time)
+        saveFoodIntake(updated)
+    }
+
+    fun updateBiggestMealTime(time: String) {
+        val current = _foodIntake.value ?: return
+        val updated = current.copy(biggestMealTime = time)
+        saveFoodIntake(updated)
+    }
+
+    fun updatePersona(persona: String) {
+        val current = _foodIntake.value ?: return
+        val updated = current.copy(selectedPersona = persona)
+        saveFoodIntake(updated)
+    }
+
+    private fun saveFoodIntake(foodIntake: FoodIntake) {
+        _foodIntake.value = foodIntake
+        viewModelScope.launch {
+            try {
+                repository.upsertFoodIntake(foodIntake)
+            } catch (e: Exception) {
+                // Log or show error
+            }
         }
     }
 }
